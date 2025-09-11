@@ -1,0 +1,10 @@
+# Dependencies pour Vercel deployment
+supabase==2.15.1
+sentence-transformers==3.3.1
+numpy>=1.21.0
+torch>=1.9.0
+transformers>=4.21.0
+tokenizers>=0.13.0
+scikit-learn>=1.0.0
+scipy>=1.7.0
+huggingface-hub>=0.10.0

@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "name": "pickme-movie-app",
+  "builds": [
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/static/tech.html"
+    },
+    {
+      "src": "/modern",
+      "dest": "/static/modern.html"
+    },
+    {
+      "src": "/classic",
+      "dest": "/static/classic.html"
+    },
+    {
+      "src": "/tinder",
+      "dest": "/static/tinder.html"
+    },
+    {
+      "src": "/api/search",
+      "dest": "/api/search.py"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/static/$1"
+    }
+  ],
+  "env": {
+    "SUPABASE_URL": "https://utzflwmghpojlsthyuqf.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0emZsd21naHBvamxzdGh5dXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDQxOTAsImV4cCI6MjA3MzEyMDE5MH0.j5qMspjG6FTN69DPwI0otqjw7Yp5lbbFadflpkjNvYc"
+  },
+  "functions": {
+    "api/*.py": {
+      "runtime": "python3.9",
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}

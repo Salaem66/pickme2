@@ -1,0 +1,60 @@
+# Environnement et secrets
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ChromaDB (données locales, pas nécessaires pour Vercel)
+chroma_db_production_1500/
+*.db
+*.sqlite
+
+# Embeddings et données lourdes (pas nécessaires pour Vercel)
+*.pkl
+*_embeddings.pkl
+*_movies_progress_*.json
+production_movies_*.json
+embeddings_data.json
+migration_sql.sql
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.bak
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Fichiers de développement local (garde seulement ce qui est nécessaire pour Vercel)
+main.py
+main_*.py
+*_backup.py
+migrate_*.py
+test_*.py
+debug_*.py
+collect_*.py
+clean_*.py
+inspect_*.py
+translate_*.py
+reset_*.py
+monitor_*.py
+setup_*.py
+build_*.py
+filter_*.py
+update_*.py
+
+# Garde seulement les fichiers essentiels pour Vercel :
+# - api/
+# - static/ 
+# - vercel.json
+# - requirements-vercel.txt
+# - README-VERCEL.md

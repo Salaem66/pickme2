@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickMe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Londrina+Solid:wght@100;300;400;900&display=swap" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Londrina Solid', 'cursive']
+                    },
+                    colors: {
+                        gray: {
+                            50: '#f9fafb',
+                            900: '#0f172a',
+                            950: '#020617'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'scale-in': 'scaleIn 0.3s ease-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #EA322B 0%, #FF6B5A 50%, #EA322B 100%);
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.35);
+        }
+    </style>
+</head>
+<body class="text-white font-sans antialiased overflow-x-hidden" style="background-color: #EA322B;">
+    
+    <!-- Header avec bouton de connexion -->
+    <header class="fixed top-0 right-0 z-50 p-6">
+        <div id="authSection" class="flex items-center space-x-4">
+            <!-- Bouton de connexion (visible quand non connecté) -->
+            <button 
+                id="loginBtn"
+                class="flex items-center space-x-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-all duration-200"
+            >
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                <span>Se connecter</span>
+            </button>
+            
+            <!-- Menu utilisateur (visible quand connecté) -->
+            <div id="userMenu" class="hidden flex items-center space-x-4">
+                <div class="flex items-center space-x-3 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <span id="userInitial" class="text-sm font-semibold">U</span>
+                    </div>
+                    <span id="userEmail" class="text-sm">user@example.com</span>
+                </div>
+                <button 
+                    id="logoutBtn"
+                    class="px-4 py-2 text-white/80 hover:text-white transition-colors duration-200"
+                >
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Search Page -->
+    <div id="searchPage" class="min-h-screen relative">
+        <!-- Background Gradient -->
+        <div class="absolute inset-0 gradient-bg opacity-10"></div>
+        
+        <!-- Content -->
+        <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
+            <div class="w-full max-w-4xl animate-fade-in">
+                <!-- Header -->
+                <div class="text-center mb-16">
+                    <h1 class="text-6xl md:text-7xl font-light mb-6 tracking-tight">
+                        <span class="font-semibold text-white">Pick</span><span class="text-white/80">Me</span>
+                    </h1>
+                    <p class="text-xl text-white/80 font-light max-w-2xl mx-auto leading-relaxed">
+                        Découvrez votre prochain film selon votre humeur
+                    </p>
+                </div>
+                
+                <!-- Main Search Card -->
+                <div class="glass rounded-3xl p-12 mb-12 animate-slide-up card-shadow">
+                    <!-- Search Input -->
+                    <div class="space-y-8">
+                        <div class="space-y-4">
+                            <label class="block text-lg font-medium text-gray-200">
+                                Comment vous sentez-vous aujourd'hui ?
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    id="moodInput" 
+                                    type="text" 
+                                    placeholder="J'ai envie de rire, quelque chose d'intense, une histoire inspirante..."
+                                    class="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all duration-300 text-lg"
+                                />
+                                <button 
+                                    id="searchBtn"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 px-8 py-3 gradient-bg rounded-xl font-medium transition-all duration-200 border-2 border-white/30 hover:border-white/50 hover:bg-white/10"
+                                >
+                                    Découvrir
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Mood Tags -->
+                        <div class="space-y-4">
+                            <p class="text-white/80 font-medium">Suggestions populaires</p>
+                            <div id="moodTags" class="flex flex-wrap gap-3">
+                                <!-- Tags will be loaded here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Platform Filters -->
+                        <div class="space-y-4 pt-4 border-t border-white/10">
+                            <p class="text-white/80 font-medium">Vos plateformes</p>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
+                                    <input type="checkbox" id="netflix" class="platform-checkbox w-5 h-5 rounded border-2 border-red-500/50 bg-transparent text-red-500 focus:ring-2 focus:ring-red-500/20">
+                                    <span class="text-sm font-medium group-hover:text-red-400 transition-colors">Netflix</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
+                                    <input type="checkbox" id="amazonprime" class="platform-checkbox w-5 h-5 rounded border-2 border-blue-500/50 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                    <span class="text-sm font-medium group-hover:text-blue-400 transition-colors">Prime</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
+                                    <input type="checkbox" id="appletv" class="platform-checkbox w-5 h-5 rounded border-2 border-white/30 bg-transparent text-white focus:ring-2 focus:ring-white/20">
+                                    <span class="text-sm font-medium group-hover:text-gray-300 transition-colors">Apple TV</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
+                                    <input type="checkbox" id="disneyplus" class="platform-checkbox w-5 h-5 rounded border-2 border-blue-400/50 bg-transparent text-blue-400 focus:ring-2 focus:ring-blue-400/20">
+                                    <span class="text-sm font-medium group-hover:text-blue-300 transition-colors">Disney+</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
+                                    <input type="checkbox" id="cineplus" class="platform-checkbox w-5 h-5 rounded border-2 border-purple-500/50 bg-transparent text-purple-500 focus:ring-2 focus:ring-purple-500/20">
+                                    <span class="text-sm font-medium group-hover:text-purple-400 transition-colors">Cine+ OCS</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <!-- Discovery Page -->
+    <div id="discoveryPage" class="hidden min-h-screen" style="background-color: #EA322B;">
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button id="backBtn" class="p-2 hover:bg-white/10 rounded-xl transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h2 class="text-xl font-semibold">PickMe</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="watchlistBtn" class="flex items-center space-x-2 px-4 py-2 glass rounded-xl hover-lift transition-all border border-white/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V5z"></path>
+                        </svg>
+                        <span id="watchlistCount">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Cards Container -->
+        <div class="pt-24 pb-32 px-6">
+            <div class="max-w-md mx-auto">
+                <div id="cardStack" class="relative h-[600px]">
+                    <!-- Loading state -->
+                    <div class="absolute inset-0 glass rounded-3xl flex items-center justify-center">
+                        <div class="text-center space-y-4">
+                            <div class="animate-spin w-8 h-8 border-2 border-white/20 border-t-white rounded-full mx-auto"></div>
+                            <p class="text-white/80">Analyse en cours...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-center space-x-8 mt-12">
+                    <button id="passBtn" class="w-16 h-16 rounded-full border-2 border-white/40 hover:border-red-500 hover:bg-red-500/10 transition-all duration-200 flex items-center justify-center hover-lift">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    
+                    <button id="likeBtn" class="w-16 h-16 rounded-full border-2 border-white/40 hover:border-green-500 hover:bg-green-500/10 transition-all duration-200 flex items-center justify-center hover-lift">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Movie Details Modal -->
+    <div id="movieModal" class="hidden fixed inset-0 bg-black/70 z-50 p-6 overflow-y-auto">
+        <div class="max-w-4xl mx-auto my-8">
+            <div class="glass rounded-3xl overflow-hidden card-shadow animate-scale-in">
+                <div class="p-6 border-b border-white/10 flex items-center justify-between">
+                    <h3 id="movieTitle" class="text-2xl font-semibold">Détails</h3>
+                    <button id="closeModal" class="p-2 hover:bg-white/10 rounded-xl transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="movieContent" class="p-6">
+                    <!-- Movie details will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Watchlist Modal -->
+    <div id="watchlistModal" class="hidden fixed inset-0 bg-black/70 z-50 p-6 overflow-y-auto">
+        <div class="max-w-3xl mx-auto my-8">
+            <div class="glass rounded-3xl overflow-hidden card-shadow animate-scale-in">
+                <div class="p-6 border-b border-white/10 flex items-center justify-between">
+                    <h3 class="text-2xl font-semibold">Ma Watchlist</h3>
+                    <button id="closeWatchlist" class="p-2 hover:bg-white/10 rounded-xl transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="watchlistContent" class="p-6 max-h-96 overflow-y-auto">
+                    <!-- Watchlist items will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class TechVibeFilms {
+            constructor() {
+                this.movies = [];
+                this.currentIndex = 0;
+                this.watchlist = JSON.parse(localStorage.getItem('pickme-watchlist') || '[]');
+                
+                // Variables freemium
+                this.isAuthenticated = false;
+                this.currentUser = null;
+                this.viewedMoviesCount = 0;
+                this.maxFreeViews = 1; // Premier film gratuit
+                
+                // Initialiser Supabase
+                this.initSupabase();
+                
+                this.init();
+            }
+            
+            async initSupabase() {
+                // Configuration Supabase
+                const supabaseUrl = 'https://utzflwmghpojlsthyuqf.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0emZsd21naHBvamxzdGh5dXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYzODkwOTMsImV4cCI6MjA1MTk2NTA5M30.TmCt9IXnLdppW1VelN8bJSJUYeKkOKALYODz1y-Zq6c';
+                
+                this.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // Vérifier si l'utilisateur est déjà connecté
+                const { data: { session } } = await this.supabase.auth.getSession();
+                if (session) {
+                    this.handleAuthSuccess(session.user);
+                }
+                
+                // Écouter les changements d'authentification
+                this.supabase.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        this.handleAuthSuccess(session.user);
+                    } else if (event === 'SIGNED_OUT') {
+                        this.handleAuthLogout();
+                    }
+                });
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.loadMoodSuggestions();
+                this.updateWatchlistCounter();
+                this.loadPlatformPreferences();
+                this.showSearchPage();
+            }
+            
+            setupEventListeners() {
+                // Search
+                document.getElementById('searchBtn').addEventListener('click', () => this.searchMovies());
+                document.getElementById('moodInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchMovies();
+                });
+                
+                // Auth
+                document.getElementById('loginBtn').addEventListener('click', () => this.showAuthModal());
+                document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+                
+                // Navigation
+                document.getElementById('backBtn').addEventListener('click', () => this.showSearchPage());
+                document.getElementById('watchlistBtn').addEventListener('click', () => this.showWatchlist());
+                
+                // Actions
+                document.getElementById('passBtn').addEventListener('click', () => this.passMovie());
+                document.getElementById('likeBtn').addEventListener('click', () => this.likeMovie());
+                
+                // Modals
+                document.getElementById('closeModal').addEventListener('click', () => this.closeMovieModal());
+                document.getElementById('closeWatchlist').addEventListener('click', () => this.closeWatchlist());
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') this.passMovie();
+                    if (e.key === 'ArrowRight') this.likeMovie();
+                    if (e.key === 'Escape') {
+                        this.closeMovieModal();
+                        this.closeWatchlist();
+                    }
+                });
+                
+                this.setupMoodTags();
+                this.setupPlatformEvents();
+            }
+            
+            setupMoodTags() {
+                document.getElementById('moodTags').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('mood-tag')) {
+                        const mood = e.target.dataset.mood;
+                        document.getElementById('moodInput').value = mood;
+                        this.searchMovies();
+                    }
+                });
+            }
+            
+            setupPlatformEvents() {
+                document.querySelectorAll('.platform-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', () => this.savePlatformPreferences());
+                });
+            }
+            
+            loadPlatformPreferences() {
+                const saved = JSON.parse(localStorage.getItem('pickme-platforms') || '[]');
+                saved.forEach(platform => {
+                    const checkbox = document.getElementById(platform);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            savePlatformPreferences() {
+                const selected = [];
+                document.querySelectorAll('.platform-checkbox:checked').forEach(checkbox => {
+                    selected.push(checkbox.id);
+                });
+                localStorage.setItem('pickme-platforms', JSON.stringify(selected));
+            }
+            
+            getSelectedPlatforms() {
+                const platformMap = {
+                    'netflix': 'Netflix',
+                    'amazonprime': 'Amazon Prime Video',
+                    'appletv': 'Apple TV Plus',
+                    'disneyplus': 'Disney Plus',
+                    'cineplus': 'Cine+ OCS Amazon Channel '
+                };
+                
+                const selected = [];
+                document.querySelectorAll('.platform-checkbox:checked').forEach(checkbox => {
+                    if (platformMap[checkbox.id]) {
+                        selected.push(platformMap[checkbox.id]);
+                    }
+                });
+                return selected;
+            }
+            
+            async loadMoodSuggestions() {
+                // Utiliser des suggestions par défaut pour simplifier le déploiement Vercel
+                const defaultSuggestions = [
+                    "quelque chose d'intense", "une aventure épique", "une histoire d'amour"
+                ];
+                
+                const container = document.getElementById('moodTags');
+                container.innerHTML = defaultSuggestions.map(mood => 
+                    `<button class="mood-tag px-4 py-2 glass rounded-xl text-sm font-medium hover-lift transition-all border border-white/20" data-mood="${mood}">${mood}</button>`
+                ).join('');
+            }
+            
+            async searchMovies() {
+                const mood = document.getElementById('moodInput').value.trim();
+                if (!mood) {
+                    this.showNotification('Décrivez votre humeur d\'abord ! 🎭', 'warning');
+                    return;
+                }
+                
+                // Vérifier qu'au moins une plateforme est sélectionnée
+                const selectedPlatforms = this.getSelectedPlatforms();
+                if (selectedPlatforms.length === 0) {
+                    this.showNotification('Sélectionnez au moins une plateforme de streaming ! 📺', 'warning');
+                    return;
+                }
+                
+                try {
+                    // Utiliser la nouvelle API Vercel
+                    const response = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            query: mood, 
+                            limit: 50, 
+                            platforms: selectedPlatforms,
+                            threshold: 0.6
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.results || data.results.length === 0) {
+                        this.showNoResults();
+                        return;
+                    }
+                    
+                    this.movies = data.results;
+                    this.currentIndex = 0;
+                    this.renderCards();
+                    this.showDiscoveryPage();
+                    
+                } catch (error) {
+                    console.error('Search error:', error);
+                    this.showNotification('Erreur de recherche: ' + error.message, 'error');
+                }
+            }
+            
+            showSearchPage() {
+                document.getElementById('searchPage').classList.remove('hidden');
+                document.getElementById('discoveryPage').classList.add('hidden');
+                document.getElementById('moodInput').value = '';
+            }
+            
+            showDiscoveryPage() {
+                document.getElementById('searchPage').classList.add('hidden');
+                document.getElementById('discoveryPage').classList.remove('hidden');
+            }
+            
+            renderCards() {
+                const stack = document.getElementById('cardStack');
+                stack.innerHTML = '';
+                
+                for (let i = 0; i < Math.min(3, this.movies.length - this.currentIndex); i++) {
+                    const movieIndex = this.currentIndex + i;
+                    const movieData = this.movies[movieIndex];
+                    const card = this.createMovieCard(movieData.movie, movieData.score, i);
+                    stack.appendChild(card);
+                }
+            }
+            
+            createMovieCard(movie, score, stackIndex) {
+                const card = document.createElement('div');
+                card.className = `absolute inset-0 glass rounded-3xl overflow-hidden cursor-pointer hover-lift transition-all duration-300`;
+                card.style.zIndex = 10 - stackIndex;
+                card.style.transform = `scale(${1 - stackIndex * 0.02}) translateY(${stackIndex * 6}px)`;
+                
+                const posterUrl = movie.poster_path || '/static/placeholder-poster.svg';
+                const platforms = movie.watch_providers?.streaming || [];
+                const genres = movie.genres || [];
+                
+                card.innerHTML = `
+                    <div class="h-full flex flex-col">
+                        <div class="flex-1 relative overflow-hidden">
+                            <img src="${posterUrl}" alt="${movie.title}" 
+                                 class="w-full h-80 object-cover transition-transform duration-700 hover:scale-110"
+                                 onerror="this.src='/static/placeholder-poster.svg'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                            
+                            <!-- Match Score -->
+                            <div class="absolute top-4 right-4">
+                                <div class="glass px-3 py-1 rounded-xl text-sm font-semibold gradient-bg bg-clip-text text-transparent">
+                                    ${Math.round(score * 100)}% match
+                                </div>
+                            </div>
+                            
+                            <!-- Movie Info Overlay -->
+                            <div class="absolute bottom-6 left-6 right-6">
+                                <h3 class="text-xl font-semibold mb-2 text-white leading-tight">${movie.title}</h3>
+                                <div class="flex items-center space-x-3 text-sm text-gray-300 mb-3">
+                                    <span class="flex items-center space-x-1">
+                                        <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                        </svg>
+                                        <span>${movie.vote_average.toFixed(1)}</span>
+                                    </span>
+                                    <span>${movie.release_date.split('-')[0]}</span>
+                                    <span>${movie.runtime || '?'}min</span>
+                                </div>
+                                
+                                <!-- Genres -->
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    ${genres.slice(0, 2).map(genre => 
+                                        `<span class="px-2 py-1 glass rounded-lg text-xs font-medium">${genre}</span>`
+                                    ).join('')}
+                                </div>
+                                
+                                <!-- Platforms -->
+                                ${platforms.length > 0 ? `
+                                <div class="flex flex-wrap gap-2">
+                                    ${platforms.slice(0, 3).map(platform => 
+                                        `<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded-lg text-xs font-medium">${platform}</span>`
+                                    ).join('')}
+                                    ${platforms.length > 3 ? `<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded-lg text-xs font-medium">+${platforms.length - 3}</span>` : ''}
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Movie Details -->
+                        <div class="p-6 space-y-4" onclick="app.showMovieDetails(${movie.id})">
+                            <p class="text-gray-300 text-sm leading-relaxed line-clamp-3">${movie.overview}</p>
+                            <div class="text-center">
+                                <button class="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                                    Voir plus d'informations →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                return card;
+            }
+            
+            async passMovie() {
+                if (this.currentIndex >= this.movies.length) return;
+                
+                // Logique freemium : vérifier si l'utilisateur peut passer au film suivant
+                if (!this.canViewNextMovie()) {
+                    this.showAuthRequired();
+                    return;
+                }
+                
+                // Si authentifié, sauvegarder "pas intéressé"
+                if (this.isAuthenticated) {
+                    const movie = this.movies[this.currentIndex].movie;
+                    await this.saveMovieInteraction(movie.id, 'not_interested');
+                }
+                
+                const topCard = document.querySelector('#cardStack > div');
+                if (topCard) {
+                    topCard.style.transform = 'translateX(-100%) rotate(-20deg)';
+                    topCard.style.opacity = '0';
+                    setTimeout(() => {
+                        this.currentIndex++;
+                        this.viewedMoviesCount++;
+                        this.checkForMoreMovies();
+                    }, 300);
+                }
+            }
+            
+            async likeMovie() {
+                if (this.currentIndex >= this.movies.length) return;
+                
+                const movie = this.movies[this.currentIndex].movie;
+                
+                // Si non authentifié, demander de se connecter pour ajouter à la wishlist
+                if (!this.isAuthenticated) {
+                    this.showAuthRequiredForWishlist(movie);
+                    return;
+                }
+                
+                // Sauvegarder en local ET en base Supabase
+                this.addToWatchlist(movie);
+                await this.saveMovieInteraction(movie.id, 'wishlist');
+                
+                const topCard = document.querySelector('#cardStack > div');
+                if (topCard) {
+                    topCard.style.transform = 'translateX(100%) rotate(20deg)';
+                    topCard.style.opacity = '0';
+                    setTimeout(() => {
+                        this.currentIndex++;
+                        this.viewedMoviesCount++;
+                        this.checkForMoreMovies();
+                    }, 300);
+                }
+            }
+            
+            checkForMoreMovies() {
+                if (this.currentIndex >= this.movies.length) {
+                    this.showNoMoreCards();
+                } else {
+                    this.renderCards();
+                }
+            }
+            
+            showNoMoreCards() {
+                document.getElementById('cardStack').innerHTML = `
+                    <div class="absolute inset-0 glass rounded-3xl flex items-center justify-center">
+                        <div class="text-center space-y-6 p-8">
+                            <div class="text-4xl">🎬</div>
+                            <h2 class="text-2xl font-semibold">C'est tout pour aujourd'hui !</h2>
+                            <p class="text-white/80">Vous avez exploré tous les films pour cette humeur</p>
+                            <button onclick="app.showSearchPage()" class="px-6 py-3 gradient-bg rounded-xl font-medium hover-lift transition-all border-2 border-white/30">
+                                Nouvelle recherche
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            showNoResults() {
+                document.getElementById('cardStack').innerHTML = `
+                    <div class="absolute inset-0 glass rounded-3xl flex items-center justify-center">
+                        <div class="text-center space-y-6 p-8">
+                            <div class="text-4xl">🔍</div>
+                            <h2 class="text-2xl font-semibold">Aucun film trouvé</h2>
+                            <p class="text-white/80">Essayez une autre humeur ou modifiez vos filtres</p>
+                            <button onclick="app.showSearchPage()" class="px-6 py-3 gradient-bg rounded-xl font-medium hover-lift transition-all border-2 border-white/30">
+                                Nouvelle recherche
+                            </button>
+                        </div>
+                    </div>
+                `;
+                this.showDiscoveryPage();
+            }
+            
+            addToWatchlist(movie) {
+                if (!this.watchlist.find(m => m.id === movie.id)) {
+                    this.watchlist.push(movie);
+                    localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
+                    this.updateWatchlistCounter();
+                    this.showNotification('Film ajouté à votre watchlist ! 🎬', 'success');
+                }
+            }
+            
+            updateWatchlistCounter() {
+                document.getElementById('watchlistCount').textContent = this.watchlist.length;
+            }
+            
+            showWatchlist() {
+                const modal = document.getElementById('watchlistModal');
+                const content = document.getElementById('watchlistContent');
+                
+                if (this.watchlist.length === 0) {
+                    content.innerHTML = `
+                        <div class="text-center space-y-4 py-8">
+                            <div class="text-4xl">📚</div>
+                            <p class="text-white/80">Votre watchlist est vide</p>
+                            <p class="text-sm text-white/60">Likez des films pour les ajouter ici !</p>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = this.watchlist.map(movie => `
+                        <div class="flex items-center space-x-4 p-4 glass rounded-2xl mb-4 hover-lift">
+                            <img src="${movie.poster_path || '/static/placeholder-poster.svg'}" 
+                                 alt="${movie.title}" class="w-16 h-24 object-cover rounded-xl"
+                                 onerror="this.src='/static/placeholder-poster.svg'">
+                            <div class="flex-1 space-y-2">
+                                <h4 class="font-semibold text-lg">${movie.title}</h4>
+                                <div class="flex items-center space-x-2 text-sm text-white/70">
+                                    <span>${movie.release_date.split('-')[0]}</span>
+                                    <span>•</span>
+                                    <span>⭐ ${movie.vote_average.toFixed(1)}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-1">
+                                    ${movie.genres.slice(0, 2).map(genre => 
+                                        `<span class="px-2 py-1 bg-white/10 rounded text-xs">${genre}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                            <button onclick="app.removeFromWatchlist(${movie.id})" 
+                                    class="p-2 text-red-400 hover:bg-red-500/20 rounded-xl transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+                
+                modal.classList.remove('hidden');
+            }
+            
+            closeWatchlist() {
+                document.getElementById('watchlistModal').classList.add('hidden');
+            }
+            
+            removeFromWatchlist(movieId) {
+                this.watchlist = this.watchlist.filter(m => m.id !== movieId);
+                localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
+                this.updateWatchlistCounter();
+                this.showWatchlist();
+            }
+            
+            showMovieDetails(movieId) {
+                const movieResult = this.movies.find(m => m.movie.id === movieId);
+                if (!movieResult) return;
+                
+                const movie = movieResult.movie;
+                const score = movieResult.score;
+                
+                const modal = document.getElementById('movieModal');
+                const title = document.getElementById('movieTitle');
+                const content = document.getElementById('movieContent');
+                
+                title.textContent = movie.title;
+                
+                const posterUrl = movie.poster_path || '/static/placeholder-poster.svg';
+                const platforms = movie.watch_providers?.streaming || [];
+                const rentPlatforms = movie.watch_providers?.rent || [];
+                const buyPlatforms = movie.watch_providers?.buy || [];
+                const genres = movie.genres || [];
+                
+                content.innerHTML = `
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Poster -->
+                        <div class="space-y-4">
+                            <img src="${posterUrl}" alt="${movie.title}" 
+                                 class="w-full rounded-2xl card-shadow"
+                                 onerror="this.src='/static/placeholder-poster.svg'">
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="space-y-6">
+                            <!-- Header Stats -->
+                            <div class="flex items-center space-x-4">
+                                <div class="glass px-4 py-2 rounded-xl">
+                                    <span class="gradient-bg bg-clip-text text-transparent font-semibold">
+                                        ${Math.round(score * 100)}% match
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    </svg>
+                                    <span class="text-lg font-semibold">${movie.vote_average.toFixed(1)}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Meta Info -->
+                            <div class="flex flex-wrap items-center gap-4 text-white/70">
+                                <span class="text-lg">${movie.release_date.split('-')[0]}</span>
+                                <span>•</span>
+                                <span>${movie.runtime || '?'} min</span>
+                                ${movie.original_language ? `<span>• ${movie.original_language.toUpperCase()}</span>` : ''}
+                            </div>
+                            
+                            <!-- Genres -->
+                            <div class="space-y-3">
+                                <h4 class="text-lg font-semibold gradient-bg bg-clip-text text-transparent">Genres</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${genres.map(genre => 
+                                        `<span class="px-3 py-1 glass rounded-xl text-sm font-medium">${genre}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                            
+                            <!-- Synopsis -->
+                            <div class="space-y-3">
+                                <h4 class="text-lg font-semibold gradient-bg bg-clip-text text-transparent">Synopsis</h4>
+                                <p class="text-gray-300 leading-relaxed">${movie.overview || 'Aucun synopsis disponible.'}</p>
+                            </div>
+                            
+                            <!-- Platforms -->
+                            <div class="space-y-4">
+                                <h4 class="text-lg font-semibold gradient-bg bg-clip-text text-transparent">Disponibilité</h4>
+                                
+                                ${platforms.length > 0 ? `
+                                <div class="space-y-3">
+                                    <h5 class="text-sm font-medium text-green-400 flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <span>Streaming</span>
+                                    </h5>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${platforms.map(platform => 
+                                            `<span class="px-3 py-2 bg-green-500/20 text-green-300 rounded-xl text-sm font-medium">${platform}</span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${rentPlatforms.length > 0 ? `
+                                <div class="space-y-3">
+                                    <h5 class="text-sm font-medium text-blue-400 flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        <span>Location</span>
+                                    </h5>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${rentPlatforms.slice(0, 4).map(platform => 
+                                            `<span class="px-3 py-2 bg-blue-500/20 text-blue-300 rounded-xl text-sm font-medium">${platform}</span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${platforms.length === 0 && rentPlatforms.length === 0 ? 
+                                    '<p class="text-white/70 text-sm">Aucune plateforme disponible</p>' : ''}
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="flex gap-4 pt-4">
+                                <button onclick="app.addToWatchlistFromModal(${movie.id})" 
+                                        class="flex-1 px-6 py-3 gradient-bg rounded-xl font-medium hover-lift transition-all border-2 border-white/30">
+                                    Ajouter à ma watchlist
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                modal.classList.remove('hidden');
+            }
+            
+            addToWatchlistFromModal(movieId) {
+                const movieResult = this.movies.find(m => m.movie.id === movieId);
+                if (movieResult) {
+                    this.addToWatchlist(movieResult.movie);
+                    this.closeMovieModal();
+                }
+            }
+            
+            closeMovieModal() {
+                document.getElementById('movieModal').classList.add('hidden');
+            }
+            
+            // === MÉTHODES FREEMIUM ===
+            
+            canViewNextMovie() {
+                // Si authentifié, accès illimité
+                if (this.isAuthenticated) {
+                    return true;
+                }
+                
+                // Sinon, vérifier le quota gratuit
+                return this.viewedMoviesCount < this.maxFreeViews;
+            }
+            
+            showAuthRequired() {
+                // Modal de connexion requise pour continuer
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
+                modal.innerHTML = `
+                    <div class="glass rounded-3xl p-8 max-w-md mx-4 text-center animate-scale-in">
+                        <div class="mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-br from-white/20 to-white/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2zm10-12V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Connectez-vous pour continuer</h3>
+                            <p class="text-white/80">
+                                Vous avez découvert votre premier film ! 🎬<br>
+                                Connectez-vous pour une expérience personnalisée illimitée.
+                            </p>
+                        </div>
+                        
+                        <!-- Toggle between auth methods -->
+                        <div class="flex mb-6 p-1 bg-white/10 rounded-2xl">
+                            <button onclick="this.parentElement.parentElement.querySelector('.google-auth').style.display='block'; this.parentElement.parentElement.querySelector('.email-auth').style.display='none'; this.classList.add('bg-white/20'); this.nextElementSibling.classList.remove('bg-white/20')" 
+                                class="flex-1 py-3 text-sm font-medium rounded-xl bg-white/20 transition-all duration-200">Google</button>
+                            <button onclick="this.parentElement.parentElement.querySelector('.google-auth').style.display='none'; this.parentElement.parentElement.querySelector('.email-auth').style.display='block'; this.classList.add('bg-white/20'); this.previousElementSibling.classList.remove('bg-white/20')" 
+                                class="flex-1 py-3 text-sm font-medium rounded-xl transition-all duration-200">Email</button>
+                        </div>
+                        
+                        <!-- Google Auth -->
+                        <div class="google-auth space-y-4">
+                            <button onclick="this.closest('.fixed').remove(); app.startGoogleAuth()" 
+                                class="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-gray-100 transition-all duration-200">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                <span>Continuer avec Google</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Email Auth -->
+                        <div class="email-auth space-y-4" style="display: none;">
+                            <!-- Toggle between Login and Signup -->
+                            <div class="flex space-x-4 mb-4">
+                                <button onclick="this.closest('.email-auth').querySelector('.login-form').style.display='block'; this.closest('.email-auth').querySelector('.signup-form').style.display='none'; this.classList.add('text-white', 'border-white/40'); this.classList.remove('text-white/60'); this.nextElementSibling.classList.remove('text-white', 'border-white/40'); this.nextElementSibling.classList.add('text-white/60')" 
+                                    class="flex-1 py-2 text-sm border-b-2 text-white border-white/40 transition-all duration-200">Connexion</button>
+                                <button onclick="this.closest('.email-auth').querySelector('.login-form').style.display='none'; this.closest('.email-auth').querySelector('.signup-form').style.display='block'; this.classList.add('text-white', 'border-white/40'); this.classList.remove('text-white/60'); this.previousElementSibling.classList.remove('text-white', 'border-white/40'); this.previousElementSibling.classList.add('text-white/60')" 
+                                    class="flex-1 py-2 text-sm border-b-2 text-white/60 transition-all duration-200">Inscription</button>
+                            </div>
+                            
+                            <!-- Login Form -->
+                            <div class="login-form space-y-3">
+                                <input type="email" placeholder="Votre email" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <input type="password" placeholder="Mot de passe" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <button onclick="app.handleEmailLogin(this.closest('.login-form').querySelector('input[type=email]').value, this.closest('.login-form').querySelector('input[type=password]').value); this.closest('.fixed').remove()" 
+                                    class="w-full px-6 py-3 bg-white/20 border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-all duration-200">
+                                    Se connecter
+                                </button>
+                            </div>
+                            
+                            <!-- Signup Form -->
+                            <div class="signup-form space-y-3" style="display: none;">
+                                <input type="email" placeholder="Votre email" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <input type="password" placeholder="Mot de passe (min. 6 caractères)" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <button onclick="app.handleEmailSignup(this.closest('.signup-form').querySelector('input[type=email]').value, this.closest('.signup-form').querySelector('input[type=password]').value); this.closest('.fixed').remove()" 
+                                    class="w-full px-6 py-3 bg-white/20 border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-all duration-200">
+                                    Créer un compte
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button onclick="this.closest('.fixed').remove()" 
+                            class="w-full px-6 py-3 text-white/80 hover:text-white transition-colors duration-200 mt-4">
+                            Plus tard
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            showAuthRequiredForWishlist(movie) {
+                // Modal spécifique pour ajouter à la wishlist
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
+                modal.innerHTML = `
+                    <div class="glass rounded-3xl p-8 max-w-md mx-4 text-center animate-scale-in">
+                        <div class="mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Enregistrer "${movie.title}" ?</h3>
+                            <p class="text-white/80">
+                                Connectez-vous pour sauvegarder vos films préférés et créer votre liste personnalisée.
+                            </p>
+                        </div>
+                        
+                        <!-- Toggle between auth methods -->
+                        <div class="flex mb-6 p-1 bg-white/10 rounded-2xl">
+                            <button onclick="this.parentElement.parentElement.querySelector('.google-auth').style.display='block'; this.parentElement.parentElement.querySelector('.email-auth').style.display='none'; this.classList.add('bg-white/20'); this.nextElementSibling.classList.remove('bg-white/20')" 
+                                class="flex-1 py-3 text-sm font-medium rounded-xl bg-white/20 transition-all duration-200">Google</button>
+                            <button onclick="this.parentElement.parentElement.querySelector('.google-auth').style.display='none'; this.parentElement.parentElement.querySelector('.email-auth').style.display='block'; this.classList.add('bg-white/20'); this.previousElementSibling.classList.remove('bg-white/20')" 
+                                class="flex-1 py-3 text-sm font-medium rounded-xl transition-all duration-200">Email</button>
+                        </div>
+                        
+                        <!-- Google Auth -->
+                        <div class="google-auth space-y-4">
+                            <button onclick="this.closest('.fixed').remove(); app.startGoogleAuth()" 
+                                class="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-gray-100 transition-all duration-200">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                <span>Se connecter et enregistrer</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Email Auth -->
+                        <div class="email-auth space-y-4" style="display: none;">
+                            <!-- Toggle between Login and Signup -->
+                            <div class="flex space-x-4 mb-4">
+                                <button onclick="this.closest('.email-auth').querySelector('.login-form').style.display='block'; this.closest('.email-auth').querySelector('.signup-form').style.display='none'; this.classList.add('text-white', 'border-white/40'); this.classList.remove('text-white/60'); this.nextElementSibling.classList.remove('text-white', 'border-white/40'); this.nextElementSibling.classList.add('text-white/60')" 
+                                    class="flex-1 py-2 text-sm border-b-2 text-white border-white/40 transition-all duration-200">Connexion</button>
+                                <button onclick="this.closest('.email-auth').querySelector('.login-form').style.display='none'; this.closest('.email-auth').querySelector('.signup-form').style.display='block'; this.classList.add('text-white', 'border-white/40'); this.classList.remove('text-white/60'); this.previousElementSibling.classList.remove('text-white', 'border-white/40'); this.previousElementSibling.classList.add('text-white/60')" 
+                                    class="flex-1 py-2 text-sm border-b-2 text-white/60 transition-all duration-200">Inscription</button>
+                            </div>
+                            
+                            <!-- Login Form -->
+                            <div class="login-form space-y-3">
+                                <input type="email" placeholder="Votre email" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <input type="password" placeholder="Mot de passe" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <button onclick="app.handleEmailLoginWithWishlist(this.closest('.login-form').querySelector('input[type=email]').value, this.closest('.login-form').querySelector('input[type=password]').value, ${movie.id}, '${movie.title.replace(/'/g, "\\'")}'); this.closest('.fixed').remove()" 
+                                    class="w-full px-6 py-3 bg-white/20 border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-all duration-200">
+                                    Se connecter et enregistrer
+                                </button>
+                            </div>
+                            
+                            <!-- Signup Form -->
+                            <div class="signup-form space-y-3" style="display: none;">
+                                <input type="email" placeholder="Votre email" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <input type="password" placeholder="Mot de passe (min. 6 caractères)" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <button onclick="app.handleEmailSignupWithWishlist(this.closest('.signup-form').querySelector('input[type=email]').value, this.closest('.signup-form').querySelector('input[type=password]').value, ${movie.id}, '${movie.title.replace(/'/g, "\\'")}'); this.closest('.fixed').remove()" 
+                                    class="w-full px-6 py-3 bg-white/20 border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-all duration-200">
+                                    Créer un compte et enregistrer
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-3 mt-4">
+                            <button onclick="this.closest('.fixed').remove(); app.passMovie()" 
+                                class="flex-1 px-4 py-3 border border-white/20 rounded-xl text-white/80 hover:text-white hover:border-white/40 transition-all duration-200">
+                                Passer
+                            </button>
+                            <button onclick="this.closest('.fixed').remove()" 
+                                class="flex-1 px-4 py-3 text-white/80 hover:text-white transition-colors duration-200">
+                                Annuler
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // === MÉTHODES SUPABASE ===
+            
+            async saveMovieInteraction(movieId, status, rating = null) {
+                if (!this.isAuthenticated || !this.supabase) return;
+                
+                try {
+                    const { data, error } = await this.supabase
+                        .from('user_movie_interactions')
+                        .upsert({
+                            user_id: this.currentUser.id,
+                            movie_id: movieId,
+                            status: status,
+                            rating: rating
+                        }, {
+                            onConflict: 'user_id,movie_id'
+                        });
+                    
+                    if (error) {
+                        console.error('Erreur sauvegarde interaction:', error);
+                    }
+                } catch (error) {
+                    console.error('Erreur sauvegarde interaction:', error);
+                }
+            }
+            
+            async loadUserInteractions() {
+                if (!this.isAuthenticated || !this.supabase) return [];
+                
+                try {
+                    const { data, error } = await this.supabase
+                        .from('user_movie_interactions')
+                        .select('*')
+                        .eq('user_id', this.currentUser.id);
+                    
+                    if (error) {
+                        console.error('Erreur chargement interactions:', error);
+                        return [];
+                    }
+                    
+                    return data || [];
+                } catch (error) {
+                    console.error('Erreur chargement interactions:', error);
+                    return [];
+                }
+            }
+            
+            // === MÉTHODES D'AUTHENTIFICATION ===
+            
+            async startGoogleAuth() {
+                try {
+                    const { data, error } = await this.supabase.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: {
+                            redirectTo: window.location.origin
+                        }
+                    });
+                    
+                    if (error) {
+                        console.error('Erreur auth Google:', error);
+                        this.showNotification('Erreur de connexion Google', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erreur auth Google:', error);
+                    this.showNotification('Erreur de connexion Google', 'error');
+                }
+            }
+            
+            async handleEmailLogin(email, password) {
+                if (!email || !password) {
+                    this.showNotification('Veuillez remplir tous les champs', 'error');
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await this.supabase.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+                    
+                    if (error) {
+                        console.error('Erreur connexion email:', error);
+                        if (error.message.includes('Invalid login credentials')) {
+                            this.showNotification('Email ou mot de passe incorrect', 'error');
+                        } else {
+                            this.showNotification('Erreur de connexion', 'error');
+                        }
+                    } else {
+                        this.handleAuthSuccess(data.user);
+                    }
+                } catch (error) {
+                    console.error('Erreur connexion email:', error);
+                    this.showNotification('Erreur de connexion', 'error');
+                }
+            }
+            
+            async handleEmailSignup(email, password) {
+                if (!email || !password) {
+                    this.showNotification('Veuillez remplir tous les champs', 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    this.showNotification('Le mot de passe doit contenir au moins 6 caractères', 'error');
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await this.supabase.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            emailRedirectTo: window.location.origin
+                        }
+                    });
+                    
+                    if (error) {
+                        console.error('Erreur inscription email:', error);
+                        if (error.message.includes('already registered')) {
+                            this.showNotification('Cet email est déjà utilisé', 'error');
+                        } else {
+                            this.showNotification('Erreur lors de l\'inscription', 'error');
+                        }
+                    } else {
+                        if (data.user && !data.user.email_confirmed_at) {
+                            this.showNotification('Inscription réussie ! Vérifiez votre email pour confirmer votre compte.', 'success');
+                        } else {
+                            this.handleAuthSuccess(data.user);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur inscription email:', error);
+                    this.showNotification('Erreur lors de l\'inscription', 'error');
+                }
+            }
+            
+            async handleEmailLoginWithWishlist(email, password, movieId, movieTitle) {
+                await this.handleEmailLogin(email, password);
+                // Ajouter le film à la wishlist après connexion réussie
+                if (this.isAuthenticated) {
+                    await this.saveMovieInteraction(movieId, 'wishlist');
+                    this.showNotification(`"${movieTitle}" ajouté à votre liste !`, 'success');
+                }
+            }
+            
+            async handleEmailSignupWithWishlist(email, password, movieId, movieTitle) {
+                const wasAuthenticated = this.isAuthenticated;
+                await this.handleEmailSignup(email, password);
+                // Ajouter le film à la wishlist après inscription réussie
+                if (!wasAuthenticated && this.isAuthenticated) {
+                    await this.saveMovieInteraction(movieId, 'wishlist');
+                    this.showNotification(`"${movieTitle}" ajouté à votre liste !`, 'success');
+                }
+            }
+            
+            showAuthModal() {
+                // Modal d'authentification principale (header)
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
+                modal.innerHTML = `
+                    <div class="glass rounded-3xl p-8 max-w-md mx-4 text-center animate-scale-in">
+                        <div class="mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-br from-white/20 to-white/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Connexion à PickMe</h3>
+                            <p class="text-white/80">
+                                Accédez à votre compte pour profiter d'une expérience personnalisée.
+                            </p>
+                        </div>
+                        
+                        <!-- Toggle between auth methods -->
+                        <div class="flex mb-6 p-1 bg-white/10 rounded-2xl">
+                            <button onclick="this.parentElement.parentElement.querySelector('.google-auth').style.display='block'; this.parentElement.parentElement.querySelector('.email-auth').style.display='none'; this.classList.add('bg-white/20'); this.nextElementSibling.classList.remove('bg-white/20')" 
+                                class="flex-1 py-3 text-sm font-medium rounded-xl bg-white/20 transition-all duration-200">Google</button>
+                            <button onclick="this.parentElement.parentElement.querySelector('.google-auth').style.display='none'; this.parentElement.parentElement.querySelector('.email-auth').style.display='block'; this.classList.add('bg-white/20'); this.previousElementSibling.classList.remove('bg-white/20')" 
+                                class="flex-1 py-3 text-sm font-medium rounded-xl transition-all duration-200">Email</button>
+                        </div>
+                        
+                        <!-- Google Auth -->
+                        <div class="google-auth space-y-4">
+                            <button onclick="this.closest('.fixed').remove(); app.startGoogleAuth()" 
+                                class="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-gray-100 transition-all duration-200">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                <span>Continuer avec Google</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Email Auth -->
+                        <div class="email-auth space-y-4" style="display: none;">
+                            <!-- Toggle between Login and Signup -->
+                            <div class="flex space-x-4 mb-4">
+                                <button onclick="this.closest('.email-auth').querySelector('.login-form').style.display='block'; this.closest('.email-auth').querySelector('.signup-form').style.display='none'; this.classList.add('text-white', 'border-white/40'); this.classList.remove('text-white/60'); this.nextElementSibling.classList.remove('text-white', 'border-white/40'); this.nextElementSibling.classList.add('text-white/60')" 
+                                    class="flex-1 py-2 text-sm border-b-2 text-white border-white/40 transition-all duration-200">Connexion</button>
+                                <button onclick="this.closest('.email-auth').querySelector('.login-form').style.display='none'; this.closest('.email-auth').querySelector('.signup-form').style.display='block'; this.classList.add('text-white', 'border-white/40'); this.classList.remove('text-white/60'); this.previousElementSibling.classList.remove('text-white', 'border-white/40'); this.previousElementSibling.classList.add('text-white/60')" 
+                                    class="flex-1 py-2 text-sm border-b-2 text-white/60 transition-all duration-200">Inscription</button>
+                            </div>
+                            
+                            <!-- Login Form -->
+                            <div class="login-form space-y-3">
+                                <input type="email" placeholder="Votre email" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <input type="password" placeholder="Mot de passe" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <button onclick="app.handleEmailLogin(this.closest('.login-form').querySelector('input[type=email]').value, this.closest('.login-form').querySelector('input[type=password]').value); this.closest('.fixed').remove()" 
+                                    class="w-full px-6 py-3 bg-white/20 border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-all duration-200">
+                                    Se connecter
+                                </button>
+                            </div>
+                            
+                            <!-- Signup Form -->
+                            <div class="signup-form space-y-3" style="display: none;">
+                                <input type="email" placeholder="Votre email" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <input type="password" placeholder="Mot de passe (min. 6 caractères)" 
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/40 text-sm" />
+                                <button onclick="app.handleEmailSignup(this.closest('.signup-form').querySelector('input[type=email]').value, this.closest('.signup-form').querySelector('input[type=password]').value); this.closest('.fixed').remove()" 
+                                    class="w-full px-6 py-3 bg-white/20 border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-all duration-200">
+                                    Créer un compte
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button onclick="this.closest('.fixed').remove()" 
+                            class="w-full px-6 py-3 text-white/80 hover:text-white transition-colors duration-200 mt-4">
+                            Annuler
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            async logout() {
+                try {
+                    const { error } = await this.supabase.auth.signOut();
+                    if (error) {
+                        console.error('Erreur déconnexion:', error);
+                        this.showNotification('Erreur de déconnexion', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erreur déconnexion:', error);
+                    this.showNotification('Erreur de déconnexion', 'error');
+                }
+            }
+            
+            handleAuthSuccess(user) {
+                this.isAuthenticated = true;
+                this.currentUser = user;
+                this.updateAuthUI();
+                this.showNotification(`Bienvenue ${user.user_metadata?.name || user.email} ! 👋`, 'success');
+            }
+            
+            handleAuthLogout() {
+                this.isAuthenticated = false;
+                this.currentUser = null;
+                this.viewedMoviesCount = 0;
+                this.updateAuthUI();
+                this.showNotification('Déconnexion réussie', 'success');
+            }
+            
+            updateAuthUI() {
+                const loginBtn = document.getElementById('loginBtn');
+                const userMenu = document.getElementById('userMenu');
+                
+                if (this.isAuthenticated && this.currentUser) {
+                    loginBtn.style.display = 'none';
+                    userMenu.style.display = 'flex';
+                    userMenu.classList.remove('hidden');
+                    
+                    // Mettre à jour les infos utilisateur avec Google metadata
+                    const name = this.currentUser.user_metadata?.name || this.currentUser.email;
+                    const email = this.currentUser.email;
+                    const avatar = this.currentUser.user_metadata?.avatar_url;
+                    
+                    document.getElementById('userEmail').textContent = name;
+                    
+                    // Utiliser l'avatar Google ou les initiales
+                    const userInitialElement = document.getElementById('userInitial');
+                    if (avatar) {
+                        userInitialElement.innerHTML = `<img src="${avatar}" alt="Avatar" class="w-8 h-8 rounded-full">`;
+                    } else {
+                        userInitialElement.textContent = name[0].toUpperCase();
+                    }
+                } else {
+                    loginBtn.style.display = 'flex';
+                    userMenu.style.display = 'none';
+                    userMenu.classList.add('hidden');
+                }
+            }
+            
+            showNotification(message, type = 'info') {
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    warning: 'bg-yellow-500',
+                    info: 'bg-blue-500'
+                };
+                
+                const notification = document.createElement('div');
+                notification.className = `fixed top-6 right-6 z-50 ${colors[type]} text-white px-6 py-3 rounded-xl font-medium card-shadow animate-slide-up`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+        
+        // Initialize app
+        const app = new TechVibeFilms();
+    </script>
+</body>
+</html>

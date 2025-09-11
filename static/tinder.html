@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeFilms - Découverte de Films</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Page de recherche */
+        .search-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .search-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .welcome-section h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .welcome-section p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.2);
+        }
+        
+        .search-section-main {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .search-box-main {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .mood-input-main {
+            flex: 1;
+            padding: 18px 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .mood-input-main:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-btn-main {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .mood-suggestions-main p {
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .mood-tags-main {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .mood-tag-main {
+            background: #f8f9ff;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .mood-tag-main:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .stats-section {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        /* Page Tinder */
+        .tinder-page {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .mood-input {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            width: 200px;
+        }
+        
+        .search-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .watchlist-counter {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 80px;
+            position: relative;
+        }
+        
+        .card-stack {
+            position: relative;
+            width: 350px;
+            height: 600px;
+        }
+        
+        .movie-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            cursor: grab;
+            transition: transform 0.3s ease;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .movie-card:active {
+            cursor: grabbing;
+        }
+        
+        .movie-card.dragging {
+            transition: none;
+        }
+        
+        .movie-card.swiped-left {
+            transform: translateX(-100vw) rotate(-30deg);
+            opacity: 0;
+        }
+        
+        .movie-card.swiped-right {
+            transform: translateX(100vw) rotate(30deg);
+            opacity: 0;
+        }
+        
+        .movie-poster {
+            width: 100%;
+            height: 400px;
+            background: #f0f0f0;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .movie-poster::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        }
+        
+        .movie-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            color: white;
+            padding: 20px;
+            z-index: 2;
+        }
+        
+        .movie-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .movie-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .movie-rating {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+        
+        .movie-year {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+        
+        .movie-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .genre-tag {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            backdrop-filter: blur(10px);
+        }
+        
+        .movie-details {
+            background: white;
+            padding: 20px;
+            height: 200px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .movie-overview {
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        
+        .streaming-info {
+            margin-bottom: 15px;
+        }
+        
+        .streaming-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .streaming-platforms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .platform-tag {
+            background: #f0f0f0;
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+        
+        .action-buttons {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+        
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .reject-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .like-btn {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 4em;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        .swipe-left {
+            left: 20px;
+            color: #e74c3c;
+        }
+        
+        .swipe-right {
+            right: 20px;
+            color: #27ae60;
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+        }
+        
+        .no-more-cards {
+            text-align: center;
+            color: white;
+            padding: 40px;
+        }
+        
+        .no-more-cards h2 {
+            margin-bottom: 20px;
+        }
+        
+        .watchlist-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .watchlist-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        
+        .watchlist-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .watchlist-poster {
+            width: 60px;
+            height: 90px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .card-stack {
+                width: 90vw;
+                height: 70vh;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .mood-input {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🎬 VibeFilms</div>
+        <div class="controls">
+            <input type="text" id="moodInput" class="mood-input" placeholder="Ton mood...">
+            <button id="searchBtn" class="search-btn">Découvrir</button>
+            <div id="watchlistCounter" class="watchlist-counter">
+                📚 <span id="watchlistCount">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page d'accueil avec recherche -->
+    <div id="searchPage" class="search-page">
+        <div class="search-container">
+            <div class="welcome-section">
+                <h1>🎬 Découvre ton prochain film</h1>
+                <p>Dis-moi ton mood et je te proposerai des films parfaits pour toi</p>
+            </div>
+            
+            <div class="search-section-main">
+                <div class="search-box-main">
+                    <input type="text" id="mainMoodInput" class="mood-input-main" placeholder="Comment tu te sens ? (ex: je veux rire, quelque chose d'intense...)">
+                    <button id="mainSearchBtn" class="search-btn-main">🔍 Découvrir</button>
+                </div>
+                
+                <div class="mood-suggestions-main">
+                    <p>Suggestions populaires :</p>
+                    <div id="mainMoodTags" class="mood-tags-main"></div>
+                </div>
+            </div>
+            
+            <div class="stats-section">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalMovies">991</div>
+                    <div class="stat-label">Films disponibles</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">74</div>
+                    <div class="stat-label">Plateformes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">19</div>
+                    <div class="stat-label">Genres</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page des résultats Tinder -->
+    <div id="tinderPage" class="tinder-page" style="display: none;">
+        <div class="container">
+            <div id="cardStack" class="card-stack">
+                <div class="loading">
+                    <p>🔍 Chargement des films...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="rejectBtn" class="action-btn reject-btn">✕</button>
+            <button id="likeBtn" class="action-btn like-btn">❤</button>
+        </div>
+        
+        <div class="back-button">
+            <button id="backBtn" class="back-btn">← Nouvelle recherche</button>
+        </div>
+    </div>
+
+    <!-- Modal Watchlist -->
+    <div id="watchlistModal" class="watchlist-modal">
+        <div class="watchlist-content">
+            <button class="close-modal" onclick="closeWatchlist()">✕</button>
+            <h2>📚 Ma liste à regarder</h2>
+            <div id="watchlistItems"></div>
+        </div>
+    </div>
+
+    <script>
+        class VibeFilmsTinder {
+            constructor() {
+                this.movies = [];
+                this.currentIndex = 0;
+                this.watchlist = JSON.parse(localStorage.getItem('vibefilms-watchlist') || '[]');
+                this.isDragging = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.currentX = 0;
+                this.currentY = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.updateWatchlistCounter();
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                // Page de recherche principale
+                document.getElementById('mainSearchBtn').addEventListener('click', () => this.searchMovies());
+                document.getElementById('mainMoodInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchMovies();
+                });
+                
+                // Header de la page Tinder (pour recherche rapide)
+                document.getElementById('searchBtn').addEventListener('click', () => this.searchMovies());
+                document.getElementById('moodInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchMovies();
+                });
+                
+                // Boutons d'action Tinder
+                document.getElementById('rejectBtn').addEventListener('click', () => this.rejectMovie());
+                document.getElementById('likeBtn').addEventListener('click', () => this.likeMovie());
+                document.getElementById('watchlistCounter').addEventListener('click', () => this.showWatchlist());
+                document.getElementById('backBtn').addEventListener('click', () => this.showSearchPage());
+                
+                // S'assurer qu'au démarrage on est sur la page de recherche
+                this.showSearchPage();
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') this.rejectMovie();
+                    if (e.key === 'ArrowRight') this.likeMovie();
+                    if (e.key === 'Escape') this.closeWatchlist();
+                });
+                
+                // Charger les suggestions de mood
+                this.loadMoodSuggestions();
+                
+                // Ajouter les événements pour les tags de mood
+                this.setupMoodTags();
+            }
+            
+            async searchMovies() {
+                // Récupérer le mood depuis l'input principal ou l'input header
+                const mainMoodInput = document.getElementById('mainMoodInput');
+                const headerMoodInput = document.getElementById('moodInput');
+                const mood = (mainMoodInput && mainMoodInput.value.trim()) || 
+                           (headerMoodInput && headerMoodInput.value.trim());
+                if (!mood) {
+                    alert('Dis-moi ton mood d\'abord ! 😊');
+                    return;
+                }
+                
+                try {
+                    document.getElementById('cardStack').innerHTML = '<div class="loading"><p>🔍 Recherche de films...</p></div>';
+                    
+                    const response = await fetch('/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mood, limit: 50 })
+                    });
+                    
+                    const data = await response.json();
+                    this.movies = data.results.map(r => r.movie);
+                    this.currentIndex = 0;
+                    
+                    if (this.movies.length === 0) {
+                        document.getElementById('cardStack').innerHTML = 
+                            '<div class="no-more-cards"><h2>Aucun film trouvé</h2><p>Essaie un autre mood !</p></div>';
+                        return;
+                    }
+                    
+                    this.renderCards();
+                    this.showTinderPage();
+                    
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    document.getElementById('cardStack').innerHTML = 
+                        '<div class="no-more-cards"><h2>Erreur</h2><p>Impossible de charger les films</p></div>';
+                }
+            }
+            
+            showSearchPage() {
+                document.getElementById('searchPage').style.display = 'flex';
+                document.getElementById('tinderPage').style.display = 'none';
+                // Nettoyer les inputs
+                const mainInput = document.getElementById('mainMoodInput');
+                const headerInput = document.getElementById('moodInput');
+                if (mainInput) mainInput.value = '';
+                if (headerInput) headerInput.value = '';
+            }
+            
+            showTinderPage() {
+                document.getElementById('searchPage').style.display = 'none';
+                document.getElementById('tinderPage').style.display = 'block';
+            }
+            
+            renderCards() {
+                const stack = document.getElementById('cardStack');
+                stack.innerHTML = '';
+                
+                // Afficher 3 cartes maximum (current + 2 suivantes)
+                for (let i = 0; i < Math.min(3, this.movies.length - this.currentIndex); i++) {
+                    const movieIndex = this.currentIndex + i;
+                    const movie = this.movies[movieIndex];
+                    const card = this.createMovieCard(movie, i);
+                    stack.appendChild(card);
+                }
+            }
+            
+            createMovieCard(movie, stackIndex) {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.style.zIndex = 10 - stackIndex;
+                card.style.transform = `scale(${1 - stackIndex * 0.05}) translateY(${stackIndex * 10}px)`;
+                
+                const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
+                const posterUrl = movie.poster_path || '/static/placeholder-poster.jpg';
+                
+                card.innerHTML = `
+                    <div class="movie-poster" style="background-image: url('${posterUrl}')">
+                        <div class="swipe-indicator swipe-left">SKIP</div>
+                        <div class="swipe-indicator swipe-right">WATCH</div>
+                        <div class="movie-info">
+                            <div class="movie-title">${movie.title}</div>
+                            <div class="movie-meta">
+                                <div class="movie-rating">⭐ ${movie.vote_average.toFixed(1)}</div>
+                                <div class="movie-year">${year}</div>
+                            </div>
+                            <div class="movie-genres">
+                                ${movie.genres.map(genre => `<span class="genre-tag">${genre}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="movie-details">
+                        <div class="movie-overview">${movie.overview}</div>
+                        ${this.renderStreamingInfo(movie.watch_providers)}
+                    </div>
+                `;
+                
+                if (stackIndex === 0) {
+                    this.setupCardSwipe(card);
+                }
+                
+                return card;
+            }
+            
+            renderStreamingInfo(providers) {
+                if (!providers || (!providers.streaming.length && !providers.rent.length)) {
+                    return '';
+                }
+                
+                let html = '<div class="streaming-info">';
+                
+                if (providers.streaming.length > 0) {
+                    html += '<div class="streaming-title">📺 Streaming</div>';
+                    html += '<div class="streaming-platforms">';
+                    providers.streaming.slice(0, 4).forEach(platform => {
+                        html += `<span class="platform-tag">${platform}</span>`;
+                    });
+                    html += '</div>';
+                }
+                
+                if (providers.rent.length > 0) {
+                    html += '<div class="streaming-title">💰 Location</div>';
+                    html += '<div class="streaming-platforms">';
+                    providers.rent.slice(0, 4).forEach(platform => {
+                        html += `<span class="platform-tag">${platform}</span>`;
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                return html;
+            }
+            
+            setupCardSwipe(card) {
+                let startX, startY, currentX, currentY;
+                let isDragging = false;
+                
+                const onStart = (e) => {
+                    isDragging = true;
+                    startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                    startY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+                    currentX = startX;
+                    currentY = startY;
+                    card.classList.add('dragging');
+                };
+                
+                const onMove = (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                    currentY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+                    
+                    const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+                    const rotation = deltaX * 0.1;
+                    
+                    card.style.transform = `translateX(${deltaX}px) translateY(${deltaY}px) rotate(${rotation}deg)`;
+                    
+                    // Indicateurs de swipe
+                    const leftIndicator = card.querySelector('.swipe-left');
+                    const rightIndicator = card.querySelector('.swipe-right');
+                    
+                    if (deltaX < -50) {
+                        leftIndicator.style.opacity = Math.min(1, Math.abs(deltaX) / 150);
+                        rightIndicator.style.opacity = 0;
+                    } else if (deltaX > 50) {
+                        rightIndicator.style.opacity = Math.min(1, deltaX / 150);
+                        leftIndicator.style.opacity = 0;
+                    } else {
+                        leftIndicator.style.opacity = 0;
+                        rightIndicator.style.opacity = 0;
+                    }
+                };
+                
+                const onEnd = () => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    card.classList.remove('dragging');
+                    
+                    const deltaX = currentX - startX;
+                    
+                    if (Math.abs(deltaX) > 100) {
+                        // Swipe détecté
+                        if (deltaX > 0) {
+                            this.likeMovie();
+                        } else {
+                            this.rejectMovie();
+                        }
+                    } else {
+                        // Retour à la position
+                        card.style.transform = '';
+                        card.querySelector('.swipe-left').style.opacity = 0;
+                        card.querySelector('.swipe-right').style.opacity = 0;
+                    }
+                };
+                
+                // Mouse events
+                card.addEventListener('mousedown', onStart);
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+                
+                // Touch events
+                card.addEventListener('touchstart', onStart, { passive: false });
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            }
+            
+            rejectMovie() {
+                this.swipeCard('left');
+            }
+            
+            likeMovie() {
+                const currentMovie = this.movies[this.currentIndex];
+                if (currentMovie) {
+                    this.addToWatchlist(currentMovie);
+                }
+                this.swipeCard('right');
+            }
+            
+            swipeCard(direction) {
+                const topCard = document.querySelector('.movie-card');
+                if (!topCard) return;
+                
+                topCard.classList.add(`swiped-${direction}`);
+                
+                setTimeout(() => {
+                    this.currentIndex++;
+                    if (this.currentIndex >= this.movies.length) {
+                        this.showNoMoreCards();
+                    } else {
+                        this.renderCards();
+                    }
+                }, 300);
+            }
+            
+            addToWatchlist(movie) {
+                if (!this.watchlist.find(m => m.id === movie.id)) {
+                    this.watchlist.push(movie);
+                    localStorage.setItem('vibefilms-watchlist', JSON.stringify(this.watchlist));
+                    this.updateWatchlistCounter();
+                    this.showAddedNotification();
+                }
+            }
+            
+            updateWatchlistCounter() {
+                document.getElementById('watchlistCount').textContent = this.watchlist.length;
+            }
+            
+            showAddedNotification() {
+                // Simple notification
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed; top: 100px; right: 20px; 
+                    background: #27ae60; color: white; 
+                    padding: 15px 20px; border-radius: 10px; 
+                    z-index: 3000; animation: slideIn 0.3s ease;
+                `;
+                notification.innerHTML = '✅ Ajouté à la watchlist !';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 2000);
+            }
+            
+            showNoMoreCards() {
+                document.getElementById('cardStack').innerHTML = `
+                    <div class="no-more-cards">
+                        <h2>🎉 Fini !</h2>
+                        <p>Plus de films pour ce mood.</p>
+                        <p>Essaie un autre mood ou consulte ta watchlist !</p>
+                    </div>
+                `;
+            }
+            
+            showWatchlist() {
+                const modal = document.getElementById('watchlistModal');
+                const items = document.getElementById('watchlistItems');
+                
+                if (this.watchlist.length === 0) {
+                    items.innerHTML = '<p>Aucun film dans ta watchlist. Swipe à droite sur les films qui t\\'intéressent !</p>';
+                } else {
+                    items.innerHTML = this.watchlist.map(movie => `
+                        <div class="watchlist-item">
+                            <div class="watchlist-poster" style="background-image: url('${movie.poster_path || ''}')"></div>
+                            <div>
+                                <h3>${movie.title}</h3>
+                                <p>⭐ ${movie.vote_average.toFixed(1)} • ${movie.genres.join(', ')}</p>
+                                <button onclick="app.removeFromWatchlist(${movie.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 5px; cursor: pointer;">Supprimer</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                modal.style.display = 'flex';
+            }
+            
+            closeWatchlist() {
+                document.getElementById('watchlistModal').style.display = 'none';
+            }
+            
+            removeFromWatchlist(movieId) {
+                this.watchlist = this.watchlist.filter(m => m.id !== movieId);
+                localStorage.setItem('vibefilms-watchlist', JSON.stringify(this.watchlist));
+                this.updateWatchlistCounter();
+                this.showWatchlist(); // Refresh
+            }
+            
+            async loadMoodSuggestions() {
+                try {
+                    const response = await fetch('/mood-suggestions');
+                    const data = await response.json();
+                    const container = document.getElementById('mainMoodTags');
+                    
+                    // Prendre les 8 premiers pour un affichage optimal
+                    const suggestions = data.suggestions.slice(0, 8);
+                    
+                    container.innerHTML = suggestions.map(mood => 
+                        `<span class="mood-tag-main" data-mood="${mood}">${mood}</span>`
+                    ).join('');
+                    
+                } catch (error) {
+                    console.error('Erreur lors du chargement des suggestions:', error);
+                    // Suggestions par défaut si l'API échoue
+                    const defaultSuggestions = [
+                        "j'ai envie de rire", "quelque chose d'intense", "une histoire d'amour", 
+                        "quelque chose qui fait peur", "je me sens nostalgique", "une aventure épique",
+                        "quelque chose d'inspirant", "du divertissement léger"
+                    ];
+                    
+                    const container = document.getElementById('mainMoodTags');
+                    container.innerHTML = defaultSuggestions.map(mood => 
+                        `<span class="mood-tag-main" data-mood="${mood}">${mood}</span>`
+                    ).join('');
+                }
+            }
+            
+            setupMoodTags() {
+                // Délégation d'événement pour les tags de mood
+                document.getElementById('mainMoodTags').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('mood-tag-main')) {
+                        const mood = e.target.getAttribute('data-mood');
+                        const input = document.getElementById('mainMoodInput');
+                        input.value = mood;
+                        this.searchMovies();
+                    }
+                });
+            }
+        }
+        
+        // Global functions
+        function closeWatchlist() {
+            app.closeWatchlist();
+        }
+        
+        // Initialize app
+        const app = new VibeFilmsTinder();
+        
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

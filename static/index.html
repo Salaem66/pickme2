@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeFilms - Recherche de Films par Mood</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .search-section {
+            margin-bottom: 40px;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .mood-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .mood-input:focus {
+            border-color: #667eea;
+        }
+        
+        .search-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .mood-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .mood-tag {
+            background: #f8f9ff;
+            color: #667eea;
+            border: 1px solid #667eea;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .mood-tag:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .results-header {
+            margin-bottom: 20px;
+        }
+        
+        .results-header h3 {
+            color: #333;
+            font-size: 1.5em;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .movie-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        
+        .movie-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .movie-poster {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+        
+        .movie-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .movie-info {
+            padding: 20px;
+        }
+        
+        .movie-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .movie-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .movie-rating {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        
+        .movie-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .genre-tag {
+            background: #f0f0f0;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .movie-overview {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .similarity-score {
+            background: #e8f5e8;
+            color: #2d7d32;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .stats {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 VibeFilms</h1>
+            <p>Trouve le film parfait qui correspond à ton humeur</p>
+        </div>
+        
+        <div class="content">
+            <div class="search-section">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="moodInput" 
+                        class="mood-input" 
+                        placeholder="Décris ton humeur... (ex: je me sens nostalgique, j'ai envie de rire...)"
+                    >
+                    <button id="searchBtn" class="search-btn">Rechercher</button>
+                </div>
+                
+                <div class="mood-suggestions">
+                    <span style="color: #666; margin-right: 10px;">Suggestions:</span>
+                    <div id="moodTags"></div>
+                </div>
+            </div>
+            
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h3 id="resultsTitle">Résultats de recherche</h3>
+                </div>
+                <div id="resultsGrid" class="results-grid"></div>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <p>🔍 Recherche en cours...</p>
+            </div>
+            
+            <div class="stats" id="stats">
+                <p>Chargement des statistiques...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let moodSuggestions = [];
+
+        // Chargement initial
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadMoodSuggestions();
+            await loadStats();
+            
+            // Event listeners
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('moodInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+        });
+
+        async function loadMoodSuggestions() {
+            try {
+                const response = await fetch(`${API_BASE}/mood-suggestions`);
+                const data = await response.json();
+                moodSuggestions = data.suggestions;
+                renderMoodTags();
+            } catch (error) {
+                console.error('Erreur chargement suggestions:', error);
+            }
+        }
+
+        function renderMoodTags() {
+            const container = document.getElementById('moodTags');
+            container.innerHTML = moodSuggestions.map(mood => 
+                `<span class="mood-tag" onclick="selectMood(\`${mood}\`)">${mood}</span>`
+            ).join('');
+        }
+
+        function selectMood(mood) {
+            document.getElementById('moodInput').value = mood;
+            performSearch();
+        }
+
+        async function performSearch() {
+            const mood = document.getElementById('moodInput').value.trim();
+            if (!mood) {
+                showError('Veuillez entrer une description de votre humeur');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideResults();
+
+            try {
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mood, limit: 12 })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                showError(`Erreur de recherche: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsGrid = document.getElementById('resultsGrid');
+
+            resultsTitle.textContent = `Films correspondant à "${data.mood}" (${data.total_results} résultats)`;
+
+            resultsGrid.innerHTML = data.results.map(result => {
+                const movie = result.movie;
+                const score = (result.score * 100).toFixed(1);
+                
+                return `
+                    <div class="movie-card">
+                        <div class="movie-poster">
+                            ${movie.poster_path ? 
+                                `<img src="${movie.poster_path}" alt="${movie.title}">` : 
+                                '🎬 Pas d\'affiche'
+                            }
+                        </div>
+                        <div class="movie-info">
+                            <div class="movie-title">${movie.title}</div>
+                            <div class="movie-meta">
+                                <span>${movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
+                                <span class="movie-rating">⭐ ${movie.vote_average.toFixed(1)}</span>
+                            </div>
+                            <div class="movie-genres">
+                                ${movie.genres.map(genre => `<span class="genre-tag">${genre}</span>`).join('')}
+                            </div>
+                            <div class="movie-overview">${movie.overview}</div>
+                            <div class="similarity-score">Correspondance: ${score}%</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            resultsSection.style.display = 'block';
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+                
+                const statsDiv = document.getElementById('stats');
+                if (data.total_movies) {
+                    const topGenres = Object.entries(data.genres_distribution)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([genre, count]) => `${genre} (${count})`)
+                        .join(', ');
+                    
+                    statsDiv.innerHTML = `
+                        <p><strong>Base de données:</strong> ${data.total_movies} films indexés</p>
+                        <p><strong>Genres principaux:</strong> ${topGenres}</p>
+                        <p><strong>Modèle IA:</strong> ${data.model_name}</p>
+                    `;
+                } else {
+                    statsDiv.innerHTML = '<p>Aucune donnée chargée</p>';
+                }
+            } catch (error) {
+                document.getElementById('stats').innerHTML = '<p>Erreur chargement statistiques</p>';
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('searchBtn').disabled = show;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function hideResults() {
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
