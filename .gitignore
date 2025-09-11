@@ -58,3 +58,4 @@ update_*.py
 # - vercel.json
 # - requirements-vercel.txt
 # - README-VERCEL.md
+.vercel
