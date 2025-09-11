@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "pickme-movie-app",
   "rewrites": [
     {
       "source": "/",
@@ -18,12 +17,5 @@
       "source": "/tinder",
       "destination": "/static/tinder.html"
     }
-  ],
-  "functions": {
-    "api/search.py": {
-      "runtime": "python3.9",
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  }
+  ]
 }
