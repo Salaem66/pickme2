@@ -37,7 +37,7 @@ class SupabaseVectorEngine:
     def model(self):
         """Chargement lazy du modèle d'embedding"""
         if self._model is None:
-            self._model = SentenceTransformer('all-mpnet-base-v2')
+            self._model = SentenceTransformer('all-MiniLM-L6-v2')
         return self._model
     
     def generate_query_embedding(self, query: str) -> List[float]:
