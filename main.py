@@ -113,8 +113,12 @@ async def search_movies(
         query_embedding = generate_embedding(q)
         
         # Traitement des filtres
-        platform_list = platforms.split(',') if platforms else None
-        genre_list = genres.split(',') if genres else None
+        platform_list = [p.strip() for p in platforms.split(',')] if platforms else None
+        genre_list = [g.strip() for g in genres.split(',')] if genres else None
+        
+        # Debug logging
+        if platform_list:
+            logger.info(f"🎬 Filtrage plateformes: {platform_list}")
         
         # Appel à la fonction Supabase avec filtrage plateforme intégré
         result = supabase.rpc('match_movies', {
@@ -165,8 +169,8 @@ async def search_movies_post(request: Request):
             raise HTTPException(status_code=400, detail="Champ 'query' requis")
         
         limit = data.get('limit', 10)
-        platforms = data.get('platforms', [])
-        genres = data.get('genres', [])
+        platforms = [p.strip() for p in data.get('platforms', [])] if data.get('platforms') else None
+        genres = [g.strip() for g in data.get('genres', [])] if data.get('genres') else None
         threshold = data.get('threshold', 0.35)
         
         logger.info(f"🔍 Recherche POST: '{query}'")
