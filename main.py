@@ -52,8 +52,8 @@ async def startup_event():
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
         # Chargement du modèle ML (une seule fois!)
-        logger.info("🤖 Chargement du modèle sentence-transformers (ultra-léger)...")
-        model = SentenceTransformer('paraphrase-MiniLM-L3-v2')  # Plus petit, même qualité
+        logger.info("🤖 Chargement du modèle sentence-transformers (384D)...")
+        model = SentenceTransformer('paraphrase-MiniLM-L3-v2')  # 384 dimensions, optimisé
         
         logger.info("✅ VibeFilms prêt!")
         
