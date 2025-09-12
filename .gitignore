@@ -41,7 +41,7 @@ main_*.py
 migrate_*.py
 test_*.py
 debug_*.py
-collect_*.py
+# collect_*.py - Allow French collection script
 clean_*.py
 inspect_*.py
 translate_*.py
