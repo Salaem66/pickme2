@@ -116,12 +116,13 @@ async def search_movies(
         platform_list = platforms.split(',') if platforms else None
         genre_list = genres.split(',') if genres else None
         
-        # Appel à la fonction Supabase
+        # Appel à la fonction Supabase avec filtrage plateforme intégré
         result = supabase.rpc('match_movies', {
             'query_embedding': query_embedding,
             'match_threshold': threshold,
             'match_count': limit,
-            'filter_genres': genre_list
+            'filter_genres': genre_list,
+            'filter_platforms': platform_list
         }).execute()
         
         if not result.data:
@@ -133,28 +134,6 @@ async def search_movies(
             })
         
         movies = result.data
-        
-        # Filtrage par plateforme si demandé
-        if platform_list:
-            filtered_movies = []
-            for movie in movies:
-                streaming_platforms = movie.get('streaming_platforms', {})
-                if isinstance(streaming_platforms, dict):
-                    available_platforms = streaming_platforms.get('streaming', [])
-                    # Amélioration du matching des plateformes
-                    for platform_requested in platform_list:
-                        platform_requested = platform_requested.strip()
-                        for available_platform in available_platforms:
-                            # Matching flexible pour gérer les variations de noms
-                            if (platform_requested.lower() == available_platform.lower() or
-                                platform_requested.lower() in available_platform.lower() or
-                                available_platform.lower() in platform_requested.lower()):
-                                filtered_movies.append(movie)
-                                break
-                        else:
-                            continue
-                        break
-            movies = filtered_movies
         
         logger.info(f"✅ Trouvé {len(movies)} films")
         
@@ -195,12 +174,13 @@ async def search_movies_post(request: Request):
         # Génération de l'embedding
         query_embedding = generate_embedding(query)
         
-        # Appel à la fonction Supabase
+        # Appel à la fonction Supabase avec filtrage plateforme intégré
         result = supabase.rpc('match_movies', {
             'query_embedding': query_embedding,
             'match_threshold': threshold,
             'match_count': limit,
-            'filter_genres': genres if genres else None
+            'filter_genres': genres if genres else None,
+            'filter_platforms': platforms if platforms else None
         }).execute()
         
         if not result.data:
@@ -211,28 +191,6 @@ async def search_movies_post(request: Request):
             })
         
         movies = result.data
-        
-        # Filtrage par plateforme si demandé
-        if platforms:
-            filtered_movies = []
-            for movie in movies:
-                streaming_platforms = movie.get('streaming_platforms', {})
-                if isinstance(streaming_platforms, dict):
-                    available_platforms = streaming_platforms.get('streaming', [])
-                    # Amélioration du matching des plateformes
-                    for platform_requested in platforms:
-                        platform_requested = platform_requested.strip()
-                        for available_platform in available_platforms:
-                            # Matching flexible pour gérer les variations de noms
-                            if (platform_requested.lower() == available_platform.lower() or
-                                platform_requested.lower() in available_platform.lower() or
-                                available_platform.lower() in platform_requested.lower()):
-                                filtered_movies.append(movie)
-                                break
-                        else:
-                            continue
-                        break
-            movies = filtered_movies
         
         return JSONResponse({
             "query": query,
