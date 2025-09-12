@@ -1,0 +1,10 @@
+# Dependencies pour Railway - Serveur persistant
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+supabase==2.15.1
+sentence-transformers==3.3.1
+numpy>=1.21.0,<2.0.0
+torch>=1.9.0,<3.0.0
+transformers>=4.21.0,<5.0.0
+scikit-learn>=1.0.0,<2.0.0
+python-multipart==0.0.6
