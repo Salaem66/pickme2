@@ -1,6 +1,16 @@
 {
   "version": 2,
+  "functions": {
+    "api/search.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api/search",
+      "destination": "/api/search.py"
+    },
     {
       "source": "/",
       "destination": "/static/tech.html"
@@ -16,6 +26,12 @@
     {
       "source": "/tinder",
       "destination": "/static/tinder.html"
+    }
+  ],
+  "builds": [
+    {
+      "src": "api/search.py",
+      "use": "@vercel/python"
     }
   ]
 }

@@ -6,28 +6,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Server
 ```bash
-# Run main FastAPI server (port 8002)
-python3 main.py
+# Development server with fallback mode
+python3 run_production.py
 
-# Access interfaces:
-# - Default (tech): http://localhost:8002/
-# - Modern: http://localhost:8002/modern  
-# - Classic: http://localhost:8002/classic
-# - Tinder-style: http://localhost:8002/tinder
-# - API docs: http://localhost:8002/docs
+# Direct access to static interfaces (Vercel deployment):
+# - Default (tech): http://localhost/
+# - Modern: http://localhost/modern  
+# - Classic: http://localhost/classic
+# - Tinder-style: http://localhost/tinder
+# - API search: /api/search.py (serverless function)
 ```
 
-### ChromaDB Setup (Production)
+### Local Development
 ```bash
-# Production setup: collect 500 enhanced movies and migrate to ChromaDB
+# Install dependencies
+pip install -r requirements.txt
+
+# Install Vercel-optimized dependencies (lighter)
+pip install -r requirements-vercel.txt
+```
+
+### Database Setup
+
+#### Supabase (Production - Current)
+```bash
+# Create Supabase tables (run once)
+python3 create_supabase_tables.py
+
+# Check database status via MCP (requires .mcp.json configuration)
+# Supabase project: utzflwmghpojlsthyuqf
+```
+
+#### ChromaDB (Legacy)
+```bash
+# Legacy setup: collect 500 enhanced movies and migrate to ChromaDB
 python3 collect_500_enhanced.py
 python3 migrate_enhanced_to_chromadb.py
 
 # Test collection before full setup
 python3 test_collection.py
-
-# Legacy: use existing migration script for 500 basic movies
-python3 reset_chromadb.py
 
 # Debug search quality
 python3 debug_search.py
@@ -63,20 +80,32 @@ python3 update_embeddings.py
 
 ## Architecture
 
+### Deployment Architecture
+VibeFilms is designed for serverless deployment on Vercel with Supabase as the backend:
+- **Static files**: HTML interfaces served directly via Vercel rewrites (`vercel.json`)
+- **Serverless API**: `/api/search.py` handles movie search requests 
+- **Vector database**: Supabase with pgvector extension for semantic search
+- **Fallback mode**: Local development support without Supabase
+
 ### Core Components
 
-- **main.py**: FastAPI server with multiple UI interfaces and comprehensive movie search API
-- **advanced_search_engine.py**: Semantic search engine with mood detection, emotion semantics, and platform filtering
+- **api/search.py**: Serverless function for movie search with Supabase vector engine
+- **run_production.py**: Production server launcher with database validation
+- **supabase_client.py**: Supabase client with vector search capabilities  
 - **tmdb_client.py**: TMDB API client for movie data collection
 - **data_collector.py**: Movie data collection utilities
+- **static/*.html**: Frontend interfaces (tech, modern, classic, tinder styles)
 
 ### Search Engine Evolution
 The project contains multiple search engine versions representing architectural evolution:
-- **vector_engine.py**: Basic vector search
-- **enhanced_vector_engine.py**: Enhanced with better embeddings 
-- **streaming_vector_engine.py**: Focused on streaming availability
+- **SupabaseVectorEngine** (current): Serverless vector search with Supabase pgvector
+- **chroma_vector_engine.py**: ChromaDB-based vector search (legacy)
+- **ultra_enhanced_engine.py**: Advanced semantic analysis with emotion detection
+- **advanced_search_engine.py**: Full semantic analysis with mood detection
 - **hybrid_search_engine.py**: Hybrid semantic + metadata search
-- **advanced_search_engine.py**: Full semantic analysis with emotion detection (current)
+- **streaming_vector_engine.py**: Focused on streaming availability
+- **enhanced_vector_engine.py**: Enhanced with better embeddings 
+- **vector_engine.py**: Basic vector search (original)
 
 ### Data Pipeline
 1. **Collection**: TMDB API → JSON files (sample_movies.json, streaming_movies_500.json, etc.)
@@ -93,29 +122,44 @@ The project contains multiple search engine versions representing architectural 
 - **Advanced semantics**: Emotion detection, query expansion, genre boosting
 
 ### Environment Setup
-- **ChromaDB Production**: Vector database stored in `./chroma_db_production/` directory
+- **Supabase**: Vector database with pgvector extension (project: utzflwmghpojlsthyuqf)
+- **MCP Integration**: Supabase MCP server configured in `.mcp.json` for database operations
 - **TMDB API**: Requires TMDB_API_KEY in .env file (already configured)
-- **Model**: Uses sentence-transformers "all-mpnet-base-v2" for embeddings
-- **Dependencies**: FastAPI, ChromaDB, sentence-transformers, pandas
-- **Database Size**: 492 unique movies with complete metadata
+- **Models**: 
+  - Production: `all-MiniLM-L6-v2` (lightweight for Vercel)
+  - Legacy: `all-mpnet-base-v2` (higher quality, larger)
+- **Dependencies**: 
+  - Vercel: `requirements-vercel.txt` (optimized for serverless)
+  - Local: `requirements.txt` (full dependencies)
+- **Database**: Supabase with vector embeddings for ~500 movies
 
 ### Current Architecture (Production)
-- **chroma_vector_engine.py**: Main vector search engine using ChromaDB
-- **collect_500_enhanced.py**: Production data collection with full metadata (streaming, cast, ratings)
-- **migrate_enhanced_to_chromadb.py**: Production migration script with deduplication
-- **main.py**: Configured for production database (`vibefilms_production`)
-- **Legacy scripts**: Various collection and migration scripts for reference
+- **api/search.py**: Serverless search function with SupabaseVectorEngine
+- **supabase_client.py**: Supabase client with vector search and user features
+- **create_supabase_tables.py**: Database schema setup for movies and user interactions
+- **Enhanced user features**: Wishlist, ratings, "not interested" filtering
+- **Vercel deployment**: Static interfaces with serverless API backend
+- **Legacy ChromaDB**: Various collection and migration scripts for reference
 
 ### Production Features
-- **Real TMDB Data**: 492 popular movies with verified information
-- **Streaming Integration**: Netflix, Disney+, Amazon Prime, HBO Max availability
+- **Real TMDB Data**: ~500 popular movies with verified information
+- **Streaming Integration**: Netflix, Disney+, Amazon Prime, HBO Max availability  
 - **Enhanced Metadata**: Cast, directors, ratings, budgets, countries
-- **Quality Search**: Semantic search with 0.6-0.8 similarity scores
-- **Genre Coverage**: Action (180), Drama (164), Comedy (113), Horror (77), etc.
+- **Semantic Search**: Vector similarity with configurable thresholds
+- **User Features**: Authentication, watchlist, ratings, personalized filtering
+- **Serverless Architecture**: Optimized for Vercel deployment with cold start mitigation
 
 ### File Patterns
-- `*_embeddings.pkl`: Cached embeddings for different movie datasets
-- `*.json`: Movie datasets from TMDB
+- `*.json`: Movie datasets from TMDB (enhanced_movies_*.json, etc.)
 - `collect_*.py`: Data collection scripts
-- `static/*.html`: Frontend interfaces
-- `*_engine.py`: Search engine implementations
+- `static/*.html`: Frontend interfaces (tech, modern, classic, tinder)
+- `*_engine.py`: Search engine implementations (legacy and current)
+- `requirements*.txt`: Dependencies (standard vs Vercel-optimized)
+- `*_client.py`: API clients (TMDB, Supabase)
+
+### Development Notes
+- **MCP Integration**: Use Supabase MCP commands for database operations
+- **Vercel Deployment**: Configured via `vercel.json` with static file rewrites
+- **Fallback Mode**: Local development works without Supabase (limited functionality)
+- **User System**: Complete authentication and user interaction tracking ready
+- **Performance**: Optimized for serverless with lazy model loading and lightweight dependencies
