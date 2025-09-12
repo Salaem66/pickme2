@@ -21,7 +21,7 @@
     },
     {
       "source": "/classic",
-      "destination": "/static/classic.html"
+      "destination": "/static/index.html"
     },
     {
       "source": "/tinder",
