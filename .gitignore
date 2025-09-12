@@ -34,8 +34,8 @@ migration_sql.sql
 .vscode/
 .idea/
 
-# Fichiers de développement local (garde seulement ce qui est nécessaire pour Vercel)
-main.py
+# Fichiers de développement local (garde seulement ce qui est nécessaire pour deployment)
+# main.py - maintenant nécessaire pour Railway
 main_*.py
 *_backup.py
 migrate_*.py
