@@ -101,7 +101,7 @@ async def search_movies(
     limit: int = Query(10, ge=1, le=50, description="Nombre de résultats"),
     platforms: Optional[str] = Query(None, description="Plateformes de streaming (séparées par virgule)"),
     genres: Optional[str] = Query(None, description="Genres (séparés par virgule)"),
-    threshold: float = Query(0.6, ge=0.0, le=1.0, description="Seuil de similarité")
+    threshold: float = Query(0.35, ge=0.0, le=1.0, description="Seuil de similarité")
 ):
     """
     Recherche de films par similarité sémantique
@@ -141,9 +141,19 @@ async def search_movies(
                 streaming_platforms = movie.get('streaming_platforms', {})
                 if isinstance(streaming_platforms, dict):
                     available_platforms = streaming_platforms.get('streaming', [])
-                    if any(platform.lower().strip() in [p.lower() for p in available_platforms] 
-                          for platform in platform_list):
-                        filtered_movies.append(movie)
+                    # Amélioration du matching des plateformes
+                    for platform_requested in platform_list:
+                        platform_requested = platform_requested.strip()
+                        for available_platform in available_platforms:
+                            # Matching flexible pour gérer les variations de noms
+                            if (platform_requested.lower() == available_platform.lower() or
+                                platform_requested.lower() in available_platform.lower() or
+                                available_platform.lower() in platform_requested.lower()):
+                                filtered_movies.append(movie)
+                                break
+                        else:
+                            continue
+                        break
             movies = filtered_movies
         
         logger.info(f"✅ Trouvé {len(movies)} films")
@@ -178,7 +188,7 @@ async def search_movies_post(request: Request):
         limit = data.get('limit', 10)
         platforms = data.get('platforms', [])
         genres = data.get('genres', [])
-        threshold = data.get('threshold', 0.6)
+        threshold = data.get('threshold', 0.35)
         
         logger.info(f"🔍 Recherche POST: '{query}'")
         
@@ -209,9 +219,19 @@ async def search_movies_post(request: Request):
                 streaming_platforms = movie.get('streaming_platforms', {})
                 if isinstance(streaming_platforms, dict):
                     available_platforms = streaming_platforms.get('streaming', [])
-                    if any(platform.lower() in [p.lower() for p in available_platforms] 
-                          for platform in platforms):
-                        filtered_movies.append(movie)
+                    # Amélioration du matching des plateformes
+                    for platform_requested in platforms:
+                        platform_requested = platform_requested.strip()
+                        for available_platform in available_platforms:
+                            # Matching flexible pour gérer les variations de noms
+                            if (platform_requested.lower() == available_platform.lower() or
+                                platform_requested.lower() in available_platform.lower() or
+                                available_platform.lower() in platform_requested.lower()):
+                                filtered_movies.append(movie)
+                                break
+                        else:
+                            continue
+                        break
             movies = filtered_movies
         
         return JSONResponse({
