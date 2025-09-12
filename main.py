@@ -101,7 +101,7 @@ async def search_movies(
     limit: int = Query(10, ge=1, le=50, description="Nombre de résultats"),
     platforms: Optional[str] = Query(None, description="Plateformes de streaming (séparées par virgule)"),
     genres: Optional[str] = Query(None, description="Genres (séparés par virgule)"),
-    threshold: float = Query(0.35, ge=0.0, le=1.0, description="Seuil de similarité")
+    threshold: float = Query(0.1, ge=0.0, le=1.0, description="Seuil de similarité")
 ):
     """
     Recherche de films par similarité sémantique
@@ -171,7 +171,7 @@ async def search_movies_post(request: Request):
         limit = data.get('limit', 10)
         platforms = [p.strip() for p in data.get('platforms', [])] if data.get('platforms') else None
         genres = [g.strip() for g in data.get('genres', [])] if data.get('genres') else None
-        threshold = data.get('threshold', 0.35)
+        threshold = data.get('threshold', 0.1)
         
         logger.info(f"🔍 Recherche POST: '{query}'")
         
