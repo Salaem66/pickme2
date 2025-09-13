@@ -23,8 +23,8 @@ class EmotionMapper:
             "peur": {
                 "keywords": ["peur", "effrayer", "terrifier", "angoisser", "flipper", "trembler"],
                 "phrases": ["j'ai peur", "j'ai envie de me faire peur", "envie d'avoir peur", "me faire flipper", "avoir la trouille", "faire peur"],
-                "target_genres": {"Horreur": 3.0, "Thriller": 2.5, "Mystère": 1.5},
-                "boost_keywords": ["effrayant", "terrifiant", "angoissant", "flippant", "gore", "suspense", "frisson", "horreur", "épouvante"]
+                "target_genres": {"Horreur": 10.0},  # BOOST ULTRA-AGRESSIF - HORREUR UNIQUEMENT
+                "boost_keywords": ["effrayant", "terrifiant", "angoissant", "flippant", "gore", "suspense", "frisson", "horreur", "épouvante", "cauchemar", "zombie", "fantôme", "diable", "démon", "massacre", "sanglant"]
             },
             
             # TRISTESSE / ÉMOTION / DRAME
