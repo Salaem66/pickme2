@@ -165,7 +165,7 @@
                     <div class="space-y-8">
                         <div class="space-y-4">
                             <label class="block text-lg font-medium text-gray-200">
-                                Comment vous sentez-vous aujourd'hui ?
+                                Quelle est votre humeur du moment ?
                             </label>
                             <div class="relative">
                                 <input
@@ -1077,6 +1077,9 @@
                             user_id: this.currentUser.id,
                             movie_data: this.watchlist,
                             updated_at: new Date().toISOString()
+                        }, {
+                            onConflict: 'user_id',
+                            ignoreDuplicates: false
                         });
 
                     if (error) {
