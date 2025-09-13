@@ -76,12 +76,27 @@
 <body class="text-white font-sans antialiased overflow-x-hidden" style="background-color: #EA322B;">
     
     <!-- Header avec bouton de connexion -->
-    <header class="fixed top-0 right-0 z-50 p-6">
-        <div id="authSection" class="flex items-center space-x-4">
+    <header class="fixed top-0 left-0 right-0 z-50 p-4">
+        <div class="flex justify-between items-center w-full">
+            <!-- Logo mobile et bouton back -->
+            <div class="flex items-center space-x-4">
+                <button id="backBtn" class="hidden p-2 hover:bg-white/10 rounded-xl transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <div class="md:hidden">
+                    <h1 class="text-2xl font-light tracking-tight">
+                        <span class="font-semibold text-white">Pick</span><span class="text-white/80">Me</span>
+                    </h1>
+                </div>
+            </div>
+
+            <div id="authSection" class="flex items-center space-x-2 md:space-x-4">
             <!-- Bouton de connexion (visible quand non connecté) -->
-            <button 
+            <button
                 id="loginBtn"
-                class="flex items-center space-x-2 px-6 py-3 bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-all duration-200"
+                class="flex items-center space-x-2 px-4 md:px-6 py-2 md:py-3 bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-all duration-200 text-sm md:text-base"
             >
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -93,25 +108,41 @@
             </button>
             
             <!-- Menu utilisateur (visible quand connecté) -->
-            <div id="userMenu" class="hidden flex items-center space-x-4">
-                <div class="flex items-center space-x-3 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+            <div id="userMenu" class="hidden flex items-center space-x-2 md:space-x-4">
+                <div class="hidden sm:flex items-center space-x-3 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
                     <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                         <span id="userInitial" class="text-sm font-semibold">U</span>
                     </div>
                     <span id="userEmail" class="text-sm">user@example.com</span>
                 </div>
-                <button 
-                    id="logoutBtn"
-                    class="px-4 py-2 text-white/80 hover:text-white transition-colors duration-200"
+                <!-- Mobile user icon -->
+                <div class="sm:hidden w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <span id="userInitialMobile" class="text-sm font-semibold">U</span>
+                </div>
+
+                <button
+                    id="watchlistBtnHeader"
+                    class="relative px-2 md:px-4 py-2 text-white/80 hover:text-white transition-colors duration-200 flex items-center space-x-1 md:space-x-2"
                 >
-                    Déconnexion
+                    <svg class="w-4 h-4 md:w-5 md:h-5 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path>
+                    </svg>
+                    <span class="hidden md:inline">Watchlist</span>
+                    <span id="watchlistCountHeader" class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">0</span>
+                </button>
+                <button
+                    id="logoutBtn"
+                    class="px-2 md:px-4 py-2 text-white/80 hover:text-white transition-colors duration-200 text-sm md:text-base"
+                >
+                    <span class="hidden md:inline">Déconnexion</span>
+                    <span class="md:hidden">⏻</span>
                 </button>
             </div>
         </div>
     </header>
-    
+
     <!-- Search Page -->
-    <div id="searchPage" class="min-h-screen relative">
+    <div id="searchPage" class="min-h-screen relative pt-20">
         <!-- Background Gradient -->
         <div class="absolute inset-0 gradient-bg opacity-10"></div>
         
@@ -137,17 +168,18 @@
                                 Comment vous sentez-vous aujourd'hui ?
                             </label>
                             <div class="relative">
-                                <input 
-                                    id="moodInput" 
-                                    type="text" 
-                                    placeholder="J'ai envie de rire, quelque chose d'intense, une histoire inspirante..."
-                                    class="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all duration-300 text-lg"
+                                <input
+                                    id="moodInput"
+                                    type="text"
+                                    placeholder="J'ai envie de rire, d'avoir peur..."
+                                    class="w-full px-4 md:px-6 py-4 md:py-5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all duration-300 text-base md:text-lg pr-24 md:pr-32"
                                 />
-                                <button 
+                                <button
                                     id="searchBtn"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 px-8 py-3 gradient-bg rounded-xl font-medium transition-all duration-200 border-2 border-white/30 hover:border-white/50 hover:bg-white/10"
+                                    class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 px-4 md:px-8 py-2 md:py-3 gradient-bg rounded-xl font-medium transition-all duration-200 border-2 border-white/30 hover:border-white/50 hover:bg-white/10 text-sm md:text-base"
                                 >
-                                    Découvrir
+                                    <span class="hidden sm:inline">Découvrir</span>
+                                    <span class="sm:hidden">🔍</span>
                                 </button>
                             </div>
                         </div>
@@ -159,7 +191,7 @@
                                 <!-- Tags will be loaded here -->
                             </div>
                         </div>
-                        
+
                         <!-- Platform Filters -->
                         <div class="space-y-4 pt-4 border-t border-white/10">
                             <p class="text-white/80 font-medium">Vos plateformes</p>
@@ -194,34 +226,11 @@
     </div>
     
     <!-- Discovery Page -->
-    <div id="discoveryPage" class="hidden min-h-screen" style="background-color: #EA322B;">
-        <!-- Header -->
-        <header class="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
-            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <button id="backBtn" class="p-2 hover:bg-white/10 rounded-xl transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                    <h2 class="text-xl font-semibold">PickMe</h2>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <button id="watchlistBtn" class="flex items-center space-x-2 px-4 py-2 glass rounded-xl hover-lift transition-all border border-white/20">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V5z"></path>
-                        </svg>
-                        <span id="watchlistCount">0</span>
-                    </button>
-                </div>
-            </div>
-        </header>
-        
+    <div id="discoveryPage" class="hidden min-h-screen pt-20" style="background-color: #EA322B;">
         <!-- Cards Container -->
-        <div class="pt-24 pb-32 px-6">
-            <div class="max-w-md mx-auto">
-                <div id="cardStack" class="relative h-[600px]">
+        <div class="pt-16 md:pt-24 pb-24 md:pb-32 px-4 md:px-6">
+            <div class="max-w-sm md:max-w-md mx-auto">
+                <div id="cardStack" class="relative h-[500px] md:h-[600px]">
                     <!-- Loading state -->
                     <div class="absolute inset-0 glass rounded-3xl flex items-center justify-center">
                         <div class="text-center space-y-4">
@@ -232,15 +241,15 @@
                 </div>
                 
                 <!-- Action Buttons -->
-                <div class="flex justify-center space-x-8 mt-12">
-                    <button id="passBtn" class="w-16 h-16 rounded-full border-2 border-white/40 hover:border-red-500 hover:bg-red-500/10 transition-all duration-200 flex items-center justify-center hover-lift">
-                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex justify-center space-x-6 md:space-x-8 mt-8 md:mt-12">
+                    <button id="passBtn" class="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-white/40 hover:border-red-500 hover:bg-red-500/10 transition-all duration-200 flex items-center justify-center hover-lift active:scale-95 touch-manipulation">
+                        <svg class="w-5 h-5 md:w-6 md:h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
-                    
-                    <button id="likeBtn" class="w-16 h-16 rounded-full border-2 border-white/40 hover:border-green-500 hover:bg-green-500/10 transition-all duration-200 flex items-center justify-center hover-lift">
-                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                    <button id="likeBtn" class="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-white/40 hover:border-green-500 hover:bg-green-500/10 transition-all duration-200 flex items-center justify-center hover-lift active:scale-95 touch-manipulation">
+                        <svg class="w-5 h-5 md:w-6 md:h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
                     </button>
@@ -292,7 +301,7 @@
             constructor() {
                 this.movies = [];
                 this.currentIndex = 0;
-                this.watchlist = JSON.parse(localStorage.getItem('pickme-watchlist') || '[]');
+                this.watchlist = JSON.parse(localStorage.getItem('pickme-watchlist') || '[]').filter(movie => movie && movie.id);
                 
                 // Variables freemium
                 this.isAuthenticated = false;
@@ -309,7 +318,7 @@
             async initSupabase() {
                 // Configuration Supabase
                 const supabaseUrl = 'https://utzflwmghpojlsthyuqf.supabase.co';
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0emZsd21naHBvamxzdGh5dXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYzODkwOTMsImV4cCI6MjA1MTk2NTA5M30.TmCt9IXnLdppW1VelN8bJSJUYeKkOKALYODz1y-Zq6c';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0emZsd21naHBvamxzdGh5dXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDQxOTAsImV4cCI6MjA3MzEyMDE5MH0.j5qMspjG6FTN69DPwI0otqjw7Yp5lbbFadflpkjNvYc';
                 
                 this.supabase = supabase.createClient(supabaseUrl, supabaseKey);
                 
@@ -350,7 +359,7 @@
                 
                 // Navigation
                 document.getElementById('backBtn').addEventListener('click', () => this.showSearchPage());
-                document.getElementById('watchlistBtn').addEventListener('click', () => this.showWatchlist());
+                document.getElementById('watchlistBtnHeader').addEventListener('click', () => this.showWatchlist());
                 
                 // Actions
                 document.getElementById('passBtn').addEventListener('click', () => this.passMovie());
@@ -431,8 +440,8 @@
                 ];
                 
                 const container = document.getElementById('moodTags');
-                container.innerHTML = defaultSuggestions.map(mood => 
-                    `<button class="mood-tag px-4 py-2 glass rounded-xl text-sm font-medium hover-lift transition-all border border-white/20" data-mood="${mood}">${mood}</button>`
+                container.innerHTML = defaultSuggestions.map(mood =>
+                    `<button class="mood-tag px-3 md:px-4 py-2 glass rounded-xl text-xs md:text-sm font-medium hover-lift transition-all border border-white/20 active:scale-95 touch-manipulation" data-mood="${mood}">${mood}</button>`
                 ).join('');
             }
             
@@ -459,7 +468,7 @@
                             query: mood, 
                             limit: 50, 
                             platforms: selectedPlatforms,
-                            threshold: 0.6
+                            threshold: 0.1
                         })
                     });
                     
@@ -489,11 +498,13 @@
                 document.getElementById('searchPage').classList.remove('hidden');
                 document.getElementById('discoveryPage').classList.add('hidden');
                 document.getElementById('moodInput').value = '';
+                document.getElementById('backBtn').classList.add('hidden');
             }
             
             showDiscoveryPage() {
                 document.getElementById('searchPage').classList.add('hidden');
                 document.getElementById('discoveryPage').classList.remove('hidden');
+                document.getElementById('backBtn').classList.remove('hidden');
             }
             
             renderCards() {
@@ -502,8 +513,8 @@
                 
                 for (let i = 0; i < Math.min(3, this.movies.length - this.currentIndex); i++) {
                     const movieIndex = this.currentIndex + i;
-                    const movieData = this.movies[movieIndex];
-                    const card = this.createMovieCard(movieData.movie, movieData.score, i);
+                    const movie = this.movies[movieIndex];
+                    const card = this.createMovieCard(movie, movie.similarity || 0, i);
                     stack.appendChild(card);
                 }
             }
@@ -514,9 +525,11 @@
                 card.style.zIndex = 10 - stackIndex;
                 card.style.transform = `scale(${1 - stackIndex * 0.02}) translateY(${stackIndex * 6}px)`;
                 
-                const posterUrl = movie.poster_path || '/static/placeholder-poster.svg';
-                const platforms = movie.watch_providers?.streaming || [];
-                const genres = movie.genres || [];
+                const posterUrl = movie.poster_path 
+                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
+                    : '/static/placeholder-poster.svg';
+                const platforms = movie.streaming_platforms?.streaming || [];
+                const genres = movie.genre_names || [];
                 
                 card.innerHTML = `
                     <div class="h-full flex flex-col">
@@ -541,9 +554,9 @@
                                         <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                                         </svg>
-                                        <span>${movie.vote_average.toFixed(1)}</span>
+                                        <span>${(movie.vote_average || 0).toFixed(1)}</span>
                                     </span>
-                                    <span>${movie.release_date.split('-')[0]}</span>
+                                    <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
                                     <span>${movie.runtime || '?'}min</span>
                                 </div>
                                 
@@ -592,7 +605,7 @@
                 
                 // Si authentifié, sauvegarder "pas intéressé"
                 if (this.isAuthenticated) {
-                    const movie = this.movies[this.currentIndex].movie;
+                    const movie = this.movies[this.currentIndex];
                     await this.saveMovieInteraction(movie.id, 'not_interested');
                 }
                 
@@ -610,8 +623,12 @@
             
             async likeMovie() {
                 if (this.currentIndex >= this.movies.length) return;
-                
-                const movie = this.movies[this.currentIndex].movie;
+
+                const movie = this.movies[this.currentIndex];
+                if (!movie || !movie.id) {
+                    console.error('Cannot like invalid movie:', movie);
+                    return;
+                }
                 
                 // Si non authentifié, demander de se connecter pour ajouter à la wishlist
                 if (!this.isAuthenticated) {
@@ -675,7 +692,11 @@
             }
             
             addToWatchlist(movie) {
-                if (!this.watchlist.find(m => m.id === movie.id)) {
+                if (!movie || !movie.id) {
+                    console.error('Cannot add invalid movie to watchlist:', movie);
+                    return;
+                }
+                if (!this.watchlist.find(m => m && m.id === movie.id)) {
                     this.watchlist.push(movie);
                     localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
                     this.updateWatchlistCounter();
@@ -684,7 +705,8 @@
             }
             
             updateWatchlistCounter() {
-                document.getElementById('watchlistCount').textContent = this.watchlist.length;
+                const count = this.watchlist.length;
+                document.getElementById('watchlistCountHeader').textContent = count;
             }
             
             showWatchlist() {
@@ -700,20 +722,21 @@
                         </div>
                     `;
                 } else {
-                    content.innerHTML = this.watchlist.map(movie => `
-                        <div class="flex items-center space-x-4 p-4 glass rounded-2xl mb-4 hover-lift">
-                            <img src="${movie.poster_path || '/static/placeholder-poster.svg'}" 
+                    const validMovies = this.watchlist.filter(movie => movie && movie.id);
+                    content.innerHTML = validMovies.map(movie => `
+                        <div class="flex items-center space-x-4 p-4 glass rounded-2xl mb-4 hover-lift cursor-pointer" onclick="app.showMovieDetailsFromWatchlist(${movie.id})">
+                            <img src="${movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/static/placeholder-poster.svg'}" 
                                  alt="${movie.title}" class="w-16 h-24 object-cover rounded-xl"
                                  onerror="this.src='/static/placeholder-poster.svg'">
                             <div class="flex-1 space-y-2">
                                 <h4 class="font-semibold text-lg">${movie.title}</h4>
                                 <div class="flex items-center space-x-2 text-sm text-white/70">
-                                    <span>${movie.release_date.split('-')[0]}</span>
+                                    <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
                                     <span>•</span>
-                                    <span>⭐ ${movie.vote_average.toFixed(1)}</span>
+                                    <span>⭐ ${(movie.vote_average || 0).toFixed(1)}</span>
                                 </div>
                                 <div class="flex flex-wrap gap-1">
-                                    ${movie.genres.slice(0, 2).map(genre => 
+                                    ${(movie.genre_names || []).slice(0, 2).map(genre => 
                                         `<span class="px-2 py-1 bg-white/10 rounded text-xs">${genre}</span>`
                                     ).join('')}
                                 </div>
@@ -743,11 +766,10 @@
             }
             
             showMovieDetails(movieId) {
-                const movieResult = this.movies.find(m => m.movie.id === movieId);
-                if (!movieResult) return;
-                
-                const movie = movieResult.movie;
-                const score = movieResult.score;
+                const movie = this.movies.find(m => m.id === movieId);
+                if (!movie) return;
+
+                const score = movie.similarity;
                 
                 const modal = document.getElementById('movieModal');
                 const title = document.getElementById('movieTitle');
@@ -755,11 +777,13 @@
                 
                 title.textContent = movie.title;
                 
-                const posterUrl = movie.poster_path || '/static/placeholder-poster.svg';
-                const platforms = movie.watch_providers?.streaming || [];
-                const rentPlatforms = movie.watch_providers?.rent || [];
-                const buyPlatforms = movie.watch_providers?.buy || [];
-                const genres = movie.genres || [];
+                const posterUrl = movie.poster_path 
+                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
+                    : '/static/placeholder-poster.svg';
+                const platforms = movie.streaming_platforms?.streaming || [];
+                const rentPlatforms = movie.streaming_platforms?.rent || [];
+                const buyPlatforms = movie.streaming_platforms?.buy || [];
+                const genres = movie.genre_names || [];
                 
                 content.innerHTML = `
                     <div class="grid md:grid-cols-2 gap-8">
@@ -783,13 +807,13 @@
                                     <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                                     </svg>
-                                    <span class="text-lg font-semibold">${movie.vote_average.toFixed(1)}</span>
+                                    <span class="text-lg font-semibold">${(movie.vote_average || 0).toFixed(1)}</span>
                                 </div>
                             </div>
                             
                             <!-- Meta Info -->
                             <div class="flex flex-wrap items-center gap-4 text-white/70">
-                                <span class="text-lg">${movie.release_date.split('-')[0]}</span>
+                                <span class="text-lg">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
                                 <span>•</span>
                                 <span>${movie.runtime || '?'} min</span>
                                 ${movie.original_language ? `<span>• ${movie.original_language.toUpperCase()}</span>` : ''}
@@ -866,15 +890,54 @@
             }
             
             addToWatchlistFromModal(movieId) {
-                const movieResult = this.movies.find(m => m.movie.id === movieId);
-                if (movieResult) {
-                    this.addToWatchlist(movieResult.movie);
+                const movie = this.movies.find(m => m.id === movieId);
+                if (movie) {
+                    this.addToWatchlist(movie);
                     this.closeMovieModal();
                 }
             }
             
             closeMovieModal() {
                 document.getElementById('movieModal').classList.add('hidden');
+            }
+
+            showMovieDetailsFromWatchlist(movieId) {
+                const movie = this.watchlist.find(m => m.id === movieId);
+                if (!movie) return;
+
+                const modal = document.getElementById('movieModal');
+                const title = document.getElementById('movieTitle');
+                const content = document.getElementById('movieContent');
+
+                title.textContent = movie.title;
+
+                const posterUrl = movie.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                    : '/static/placeholder-poster.svg';
+                const genres = movie.genre_names || [];
+
+                content.innerHTML = `
+                    <div class="space-y-6">
+                        <img src="${posterUrl}" alt="${movie.title}"
+                             class="w-full h-80 object-cover rounded-2xl"
+                             onerror="this.src='/static/placeholder-poster.svg'">
+
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-4 text-sm">
+                                <span>⭐ ${(movie.vote_average || 0).toFixed(1)}</span>
+                                <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
+                                <span class="px-2 py-1 glass rounded-lg text-xs">${genres.join(', ')}</span>
+                            </div>
+
+                            <p class="text-white/80 leading-relaxed">${movie.overview || 'Aucune description disponible.'}</p>
+                        </div>
+                    </div>
+                `;
+
+                modal.classList.remove('hidden');
+
+                // Fermer la watchlist
+                this.closeWatchlist();
             }
             
             // === MÉTHODES FREEMIUM ===

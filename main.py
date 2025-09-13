@@ -5,9 +5,10 @@ Moteur de recherche de films par mood avec Supabase
 """
 
 import os
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 import uvicorn
 
@@ -16,6 +17,12 @@ from supabase import create_client, Client
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import logging
+
+# Import du système d'auth simple
+from simple_auth import simple_auth, get_current_user, get_current_user_optional
+
+# Import du système de mapping émotionnel
+from emotion_mapper import emotion_mapper
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +45,66 @@ app = FastAPI(
 
 # Servir les fichiers statiques
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ==================== ENDPOINTS D'AUTHENTIFICATION ====================
+
+@app.post("/api/auth/register")
+async def register(request: Request):
+    """Inscription utilisateur"""
+    try:
+        data = await request.json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        name = data.get('name', '').strip()
+        
+        if not email or not password or not name:
+            raise HTTPException(status_code=400, detail="Email, mot de passe et nom requis")
+        
+        result = await simple_auth.register_user(email, password, name)
+        return JSONResponse(result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erreur inscription: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de l'inscription")
+
+@app.post("/api/auth/login")
+async def login(request: Request):
+    """Connexion utilisateur"""
+    try:
+        data = await request.json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email et mot de passe requis")
+        
+        result = await simple_auth.login_user(email, password)
+        return JSONResponse(result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erreur connexion: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la connexion")
+
+@app.get("/api/auth/me")
+async def get_user_info(current_user: dict = Depends(get_current_user)):
+    """Récupérer les informations de l'utilisateur connecté"""
+    return JSONResponse({
+        "user": {
+            "id": current_user['id'],
+            "email": current_user['email'],
+            "name": current_user['name'],
+            "subscription_type": current_user.get('subscription_type', 'free'),
+            "preferences": current_user.get('preferences', {})
+        }
+    })
+
+# Note: Endpoints de préférences et watchlist à ajouter plus tard
+
+# ==================== EVENTS ET CONFIGURATION ====================
 
 @app.on_event("startup")
 async def startup_event():
@@ -95,13 +162,20 @@ async def tinder_interface():
     with open("static/tinder.html", "r", encoding="utf-8") as f:
         return HTMLResponse(f.read())
 
+@app.get("/test-auth", response_class=HTMLResponse)
+async def test_auth_interface():
+    """Page de test Google OAuth"""
+    with open("test_google_oauth.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
 @app.get("/api/search")
 async def search_movies(
     q: str = Query(..., description="Requête de recherche"),
     limit: int = Query(10, ge=1, le=50, description="Nombre de résultats"),
     platforms: Optional[str] = Query(None, description="Plateformes de streaming (séparées par virgule)"),
     genres: Optional[str] = Query(None, description="Genres (séparés par virgule)"),
-    threshold: float = Query(0.1, ge=0.0, le=1.0, description="Seuil de similarité")
+    threshold: float = Query(0.1, ge=0.0, le=1.0, description="Seuil de similarité"),
+    current_user: Optional[dict] = Depends(get_current_user_optional)
 ):
     """
     Recherche de films par similarité sémantique
@@ -109,8 +183,17 @@ async def search_movies(
     try:
         logger.info(f"🔍 Recherche: '{q}' (limit: {limit})")
         
-        # Génération de l'embedding
-        query_embedding = generate_embedding(q)
+        # Détection et amélioration émotionnelle
+        enhanced_query = emotion_mapper.enhance_query(q)
+        genre_boosts = emotion_mapper.get_genre_boosts(q)
+        
+        if enhanced_query != q:
+            logger.info(f"✨ Requête améliorée: '{enhanced_query}'")
+        if genre_boosts:
+            logger.info(f"🎭 Boost genres: {genre_boosts}")
+        
+        # Génération de l'embedding avec la requête améliorée
+        query_embedding = generate_embedding(enhanced_query)
         
         # Traitement des filtres
         platform_list = [p.strip() for p in platforms.split(',')] if platforms else None
@@ -139,10 +222,36 @@ async def search_movies(
         
         movies = result.data
         
+        # Application des boost émotionnels
+        if genre_boosts and movies:
+            for movie in movies:
+                movie_genres = movie.get('genre_names', [])
+                emotion_boost = 1.0
+                
+                # Calculer le boost maximal pour ce film
+                for genre in movie_genres:
+                    if genre in genre_boosts:
+                        emotion_boost = max(emotion_boost, genre_boosts[genre])
+                
+                # Appliquer le boost au score de similarité
+                if emotion_boost > 1.0:
+                    original_similarity = movie.get('similarity', 0)
+                    boosted_similarity = min(1.0, original_similarity * emotion_boost)
+                    movie['similarity'] = boosted_similarity
+                    movie['emotion_boost'] = emotion_boost
+            
+            # Retrier par similarité après boost
+            movies.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+            logger.info(f"🎭 Boost émotionnel appliqué aux genres")
+        
         logger.info(f"✅ Trouvé {len(movies)} films")
+        
+        # Note: Tracking des recherches à ajouter plus tard avec les tables custom
         
         return JSONResponse({
             "query": q,
+            "enhanced_query": enhanced_query if enhanced_query != q else None,
+            "detected_emotions": genre_boosts if genre_boosts else None,
             "results": movies[:limit],
             "count": len(movies),
             "filters": {
@@ -175,8 +284,17 @@ async def search_movies_post(request: Request):
         
         logger.info(f"🔍 Recherche POST: '{query}'")
         
-        # Génération de l'embedding
-        query_embedding = generate_embedding(query)
+        # Détection et amélioration émotionnelle
+        enhanced_query = emotion_mapper.enhance_query(query)
+        genre_boosts = emotion_mapper.get_genre_boosts(query)
+        
+        if enhanced_query != query:
+            logger.info(f"✨ Requête améliorée: '{enhanced_query}'")
+        if genre_boosts:
+            logger.info(f"🎭 Boost genres: {genre_boosts}")
+        
+        # Génération de l'embedding avec la requête améliorée
+        query_embedding = generate_embedding(enhanced_query)
         
         # Appel à la fonction Supabase avec filtrage plateforme intégré
         result = supabase.rpc('match_movies', {
@@ -196,8 +314,32 @@ async def search_movies_post(request: Request):
         
         movies = result.data
         
+        # Application des boost émotionnels
+        if genre_boosts and movies:
+            for movie in movies:
+                movie_genres = movie.get('genre_names', [])
+                emotion_boost = 1.0
+                
+                # Calculer le boost maximal pour ce film
+                for genre in movie_genres:
+                    if genre in genre_boosts:
+                        emotion_boost = max(emotion_boost, genre_boosts[genre])
+                
+                # Appliquer le boost au score de similarité
+                if emotion_boost > 1.0:
+                    original_similarity = movie.get('similarity', 0)
+                    boosted_similarity = min(1.0, original_similarity * emotion_boost)
+                    movie['similarity'] = boosted_similarity
+                    movie['emotion_boost'] = emotion_boost
+            
+            # Retrier par similarité après boost
+            movies.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+            logger.info(f"🎭 Boost émotionnel appliqué aux genres (POST)")
+        
         return JSONResponse({
             "query": query,
+            "enhanced_query": enhanced_query if enhanced_query != query else None,
+            "detected_emotions": genre_boosts if genre_boosts else None,
             "results": movies[:limit],
             "count": len(movies),
             "filters": {
