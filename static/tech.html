@@ -700,6 +700,12 @@
                     this.watchlist.push(movie);
                     localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
                     this.updateWatchlistCounter();
+
+                    // Synchroniser avec Supabase si connecté
+                    if (this.isAuthenticated) {
+                        this.saveWatchlistToSupabase();
+                    }
+
                     this.showNotification('Film ajouté à votre watchlist ! 🎬', 'success');
                 }
             }
@@ -989,8 +995,77 @@
                 this.watchlist = this.watchlist.filter(movie => movie.id !== movieId);
                 localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
                 this.updateWatchlistCounter();
+
+                // Synchroniser avec Supabase si connecté
+                if (this.isAuthenticated) {
+                    this.saveWatchlistToSupabase();
+                }
+
                 this.showNotification('Film retiré de votre watchlist ! 🗑️', 'success');
                 this.closeMovieModal();
+            }
+
+            // === SYNCHRONISATION WATCHLIST ===
+
+            async loadUserWatchlist() {
+                if (!this.isAuthenticated || !this.currentUser) return;
+
+                try {
+                    const { data, error } = await this.supabase
+                        .from('user_watchlists')
+                        .select('movie_data')
+                        .eq('user_id', this.currentUser.id)
+                        .single();
+
+                    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                        console.error('Erreur chargement watchlist:', error);
+                        return;
+                    }
+
+                    if (data?.movie_data) {
+                        // Fusionner la watchlist locale avec celle du serveur (éviter les doublons)
+                        const serverWatchlist = Array.isArray(data.movie_data) ? data.movie_data : [];
+                        const localWatchlist = this.watchlist || [];
+
+                        const mergedWatchlist = [...serverWatchlist];
+                        localWatchlist.forEach(localMovie => {
+                            if (!mergedWatchlist.find(m => m.id === localMovie.id)) {
+                                mergedWatchlist.push(localMovie);
+                            }
+                        });
+
+                        this.watchlist = mergedWatchlist;
+                        localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
+                        this.updateWatchlistCounter();
+
+                        // Si on avait des films locaux, les sauvegarder sur le serveur
+                        if (localWatchlist.length > 0) {
+                            await this.saveWatchlistToSupabase();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur chargement watchlist:', error);
+                }
+            }
+
+            async saveWatchlistToSupabase() {
+                if (!this.isAuthenticated || !this.currentUser) return;
+
+                try {
+                    const { error } = await this.supabase
+                        .from('user_watchlists')
+                        .upsert({
+                            user_id: this.currentUser.id,
+                            movie_data: this.watchlist,
+                            updated_at: new Date().toISOString()
+                        });
+
+                    if (error) {
+                        console.error('Erreur sauvegarde watchlist:', error);
+                    }
+                } catch (error) {
+                    console.error('Erreur sauvegarde watchlist:', error);
+                }
             }
             
             // === MÉTHODES FREEMIUM ===
@@ -1431,10 +1506,14 @@
                 }
             }
             
-            handleAuthSuccess(user) {
+            async handleAuthSuccess(user) {
                 this.isAuthenticated = true;
                 this.currentUser = user;
                 this.updateAuthUI();
+
+                // Charger la watchlist de l'utilisateur depuis Supabase
+                await this.loadUserWatchlist();
+
                 this.showNotification(`Bienvenue ${user.user_metadata?.name || user.email} ! 👋`, 'success');
             }
             
@@ -1442,6 +1521,12 @@
                 this.isAuthenticated = false;
                 this.currentUser = null;
                 this.viewedMoviesCount = 0;
+
+                // Vider la watchlist locale lors de la déconnexion
+                this.watchlist = [];
+                localStorage.removeItem('pickme-watchlist');
+                this.updateWatchlistCounter();
+
                 this.updateAuthUI();
                 this.showNotification('Déconnexion réussie', 'success');
             }
