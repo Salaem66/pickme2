@@ -914,6 +914,9 @@
                 const posterUrl = movie.poster_path
                     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
                     : '/static/placeholder-poster.svg';
+                const platforms = movie.streaming_platforms?.streaming || [];
+                const rentPlatforms = movie.streaming_platforms?.rent || [];
+                const buyPlatforms = movie.streaming_platforms?.buy || [];
                 const genres = movie.genre_names || [];
 
                 content.innerHTML = `
@@ -926,10 +929,52 @@
                             <div class="flex items-center space-x-4 text-sm">
                                 <span>⭐ ${(movie.vote_average || 0).toFixed(1)}</span>
                                 <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
-                                <span class="px-2 py-1 glass rounded-lg text-xs">${genres.join(', ')}</span>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2">
+                                ${genres.map(genre => `<span class="px-2 py-1 glass rounded-lg text-xs">${genre}</span>`).join('')}
                             </div>
 
                             <p class="text-white/80 leading-relaxed">${movie.overview || 'Aucune description disponible.'}</p>
+
+                            ${platforms.length > 0 ? `
+                                <div class="space-y-2">
+                                    <h4 class="font-semibold text-sm">Disponible en streaming sur :</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${platforms.map(platform => `<span class="px-3 py-1 gradient-bg rounded-full text-xs">${platform}</span>`).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            ${rentPlatforms.length > 0 ? `
+                                <div class="space-y-2">
+                                    <h4 class="font-semibold text-sm">À louer sur :</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${rentPlatforms.map(platform => `<span class="px-3 py-1 bg-blue-500/20 rounded-full text-xs">${platform}</span>`).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            ${buyPlatforms.length > 0 ? `
+                                <div class="space-y-2">
+                                    <h4 class="font-semibold text-sm">À acheter sur :</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${buyPlatforms.map(platform => `<span class="px-3 py-1 bg-green-500/20 rounded-full text-xs">${platform}</span>`).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-4 pt-4 border-t border-white/10">
+                            <button onclick="app.closeMovieModal()"
+                                    class="flex-1 px-6 py-3 bg-white/10 rounded-xl font-medium hover-lift transition-all border border-white/20 hover:bg-white/20">
+                                Fermer
+                            </button>
+                            <button onclick="app.removeFromWatchlistFromModal(${movie.id})"
+                                    class="flex-1 px-6 py-3 bg-red-500/20 border-2 border-red-500/40 rounded-xl font-medium hover-lift transition-all hover:bg-red-500/30">
+                                Retirer de ma watchlist
+                            </button>
                         </div>
                     </div>
                 `;
@@ -938,6 +983,14 @@
 
                 // Fermer la watchlist
                 this.closeWatchlist();
+            }
+
+            removeFromWatchlistFromModal(movieId) {
+                this.watchlist = this.watchlist.filter(movie => movie.id !== movieId);
+                localStorage.setItem('pickme-watchlist', JSON.stringify(this.watchlist));
+                this.updateWatchlistCounter();
+                this.showNotification('Film retiré de votre watchlist ! 🗑️', 'success');
+                this.closeMovieModal();
             }
             
             // === MÉTHODES FREEMIUM ===
