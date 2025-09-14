@@ -111,52 +111,85 @@ class SupabaseVectorEngine:
         
         return embedding
     
-    def search_movies(self, 
-                     query: str, 
-                     limit: int = 10, 
+    def search_movies(self,
+                     query: str,
+                     limit: int = 10,
                      similarity_threshold: float = 0.3,  # Plus bas pour le fallback
                      platforms: Optional[List[str]] = None,
-                     genres: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                     genres: Optional[List[str]] = None,
+                     fallback_limit: int = 5) -> Dict[str, Any]:
         """
-        Recherche de films par similarité vectorielle
+        Recherche de films par similarité vectorielle avec système de fallback intelligent
         """
         try:
             # Générer l'embedding de la requête
             query_embedding = self.generate_query_embedding_api(query)
-            
+
             # Construire les filtres de genre si fournis
             genre_filter = None
             if genres:
                 genre_filter = genres
-            
-            # Appeler la fonction de recherche Supabase
+
+            # Appeler la fonction de recherche Supabase (prendre plus de résultats pour le filtrage)
             result = self.supabase.rpc('match_movies', {
                 'query_embedding': query_embedding,
                 'match_threshold': similarity_threshold,
-                'match_count': limit,
+                'match_count': limit * 3,  # Récupérer plus pour compenser le filtrage
                 'filter_genres': genre_filter
             }).execute()
-            
+
             if not result.data:
-                return []
-            
-            # Filtrer par plateforme si spécifié
-            movies = result.data
+                return {"preferred_results": [], "fallback_results": [], "total_count": 0}
+
+            all_movies = result.data
+            preferred_movies = []  # Films sur les plateformes préférées
+            other_movies = []      # Films sur d'autres plateformes
+
+            # Séparer les films selon leur disponibilité
             if platforms:
-                filtered_movies = []
-                for movie in movies:
+                for movie in all_movies:
                     streaming_platforms = movie.get('streaming_platforms', {})
                     if isinstance(streaming_platforms, dict):
                         available_platforms = streaming_platforms.get('streaming', [])
-                        if any(platform.lower() in [p.lower() for p in available_platforms] for platform in platforms):
-                            filtered_movies.append(movie)
-                movies = filtered_movies
-            
-            return movies[:limit]
-            
+
+                        # Vérifier si le film est sur les plateformes préférées
+                        is_on_preferred = any(platform.lower() in [p.lower() for p in available_platforms] for platform in platforms)
+
+                        if is_on_preferred:
+                            movie['availability_status'] = 'preferred'
+                            preferred_movies.append(movie)
+                        else:
+                            movie['availability_status'] = 'other'
+                            other_movies.append(movie)
+            else:
+                # Si aucune plateforme spécifiée, tous les films sont "préférés"
+                preferred_movies = all_movies
+                for movie in preferred_movies:
+                    movie['availability_status'] = 'preferred'
+
+            # Stratégie intelligente de fallback
+            final_results = []
+
+            # 1. Prendre d'abord les films préférés
+            final_results.extend(preferred_movies[:limit])
+
+            # 2. Si on n'a pas assez de résultats, compléter avec les autres
+            remaining_slots = limit - len(final_results)
+            if remaining_slots > 0 and len(preferred_movies) < fallback_limit:
+                # Seulement faire le fallback si on a très peu de résultats préférés
+                fallback_movies = other_movies[:remaining_slots]
+                final_results.extend(fallback_movies)
+
+            return {
+                "preferred_results": preferred_movies[:limit],
+                "fallback_results": other_movies[:remaining_slots] if remaining_slots > 0 and len(preferred_movies) < fallback_limit else [],
+                "total_count": len(final_results),
+                "fallback_used": len(preferred_movies) < fallback_limit and remaining_slots > 0
+            }
+
         except Exception as e:
             print(f"Error searching movies: {e}")
-            return []
+            return {"preferred_results": [], "fallback_results": [], "total_count": 0}
 
 # Instance globale pour la réutilisation
 vector_engine = None
@@ -191,17 +224,23 @@ class handler(BaseHTTPRequestHandler):
             
             # Effectuer la recherche
             engine = get_vector_engine()
-            results = engine.search_movies(
+            search_results = engine.search_movies(
                 query=search_query,
                 limit=limit,
                 platforms=platforms
             )
-            
+
+            # Combiner les résultats pour la réponse
+            all_results = search_results["preferred_results"] + search_results["fallback_results"]
+
             # Réponse JSON
             self.send_json_response({
                 "query": search_query,
-                "results": results,
-                "count": len(results)
+                "results": all_results,
+                "count": len(all_results),
+                "fallback_used": search_results["fallback_used"],
+                "preferred_count": len(search_results["preferred_results"]),
+                "fallback_count": len(search_results["fallback_results"])
             })
             
         except Exception as e:
@@ -234,18 +273,24 @@ class handler(BaseHTTPRequestHandler):
             
             # Effectuer la recherche
             engine = get_vector_engine()
-            results = engine.search_movies(
+            search_results = engine.search_movies(
                 query=search_query,
                 limit=limit,
                 platforms=platforms,
                 genres=genres
             )
-            
+
+            # Combiner les résultats pour la réponse
+            all_results = search_results["preferred_results"] + search_results["fallback_results"]
+
             # Réponse JSON
             self.send_json_response({
                 "query": search_query,
-                "results": results,
-                "count": len(results),
+                "results": all_results,
+                "count": len(all_results),
+                "fallback_used": search_results["fallback_used"],
+                "preferred_count": len(search_results["preferred_results"]),
+                "fallback_count": len(search_results["fallback_results"]),
                 "filters": {
                     "platforms": platforms,
                     "genres": genres
