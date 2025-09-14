@@ -13,9 +13,9 @@ class EmotionMapper:
         self.emotion_mappings = {
             # RIRE / HUMOUR / COMÉDIE
             "rire": {
-                "keywords": ["rire", "rigoler", "marrer", "éclater", "pouffer", "se bidonner"],
-                "phrases": ["j'ai envie de rire", "envie de rigoler", "besoin de rire", "faire rire"],
-                "target_genres": {"Comédie": 2.0, "Familial": 1.5, "Animation": 1.3},
+                "keywords": ["rire"],  # SIMPLE : DÈS QU'IL Y A "RIRE" → BOOST COMÉDIE
+                "phrases": [],
+                "target_genres": {"Comédie": 8.0, "Familial": 4.0, "Animation": 3.0},
                 "boost_keywords": ["drôle", "amusant", "hilarant", "comique", "rigolo", "marrant", "gag", "humour"]
             },
             
@@ -29,49 +29,49 @@ class EmotionMapper:
             
             # TRISTESSE / ÉMOTION / DRAME
             "tristesse": {
-                "keywords": ["triste", "pleurer", "émouvoir", "bouleverser", "mélancolie", "cafard"],
-                "phrases": ["je me sens triste", "envie de pleurer", "me faire pleurer", "être ému"],
-                "target_genres": {"Drame": 2.0, "Romance": 1.5, "Familial": 1.3},
+                "keywords": ["triste"],  # SIMPLE : DÈS QU'IL Y A "TRISTE" → BOOST DRAME
+                "phrases": [],
+                "target_genres": {"Drame": 8.0, "Romance": 4.0},
                 "boost_keywords": ["émouvant", "bouleversant", "touchant", "poignant", "mélancolique", "nostalgique"]
             },
             
             # ROMANCE / AMOUR / TENDRESSE
             "amour": {
-                "keywords": ["amour", "romance", "romantique", "tendresse", "passion", "cœur"],
-                "phrases": ["je veux de la romance", "envie d'amour", "histoire d'amour", "film romantique"],
-                "target_genres": {"Romance": 2.5, "Drame": 1.5, "Comédie": 1.2},
+                "keywords": ["amour"],  # SIMPLE : DÈS QU'IL Y A "AMOUR" → BOOST ROMANCE
+                "phrases": [],
+                "target_genres": {"Romance": 8.0, "Drame": 4.0, "Comédie": 3.0},
                 "boost_keywords": ["romantique", "passionné", "tendre", "sensuel", "couple", "mariage", "baiser"]
             },
             
             # ACTION / ADRÉNALINE / EXCITATION
             "action": {
-                "keywords": ["action", "adrénaline", "excitation", "intensité", "bagarre", "combat"],
-                "phrases": ["action et adrénaline", "quelque chose d'intense", "du mouvement", "de l'action"],
-                "target_genres": {"Action": 2.5, "Thriller": 2.0, "Aventure": 1.8, "Crime": 1.5},
+                "keywords": ["action"],  # SIMPLE : DÈS QU'IL Y A "ACTION" → BOOST ACTION
+                "phrases": [],
+                "target_genres": {"Action": 8.0, "Thriller": 4.0, "Aventure": 3.0},
                 "boost_keywords": ["intense", "explosif", "rapide", "combat", "poursuite", "bagarre", "spectaculaire"]
             },
             
             # FAMILLE / ENFANTS / INNOCENCE
             "famille": {
-                "keywords": ["famille", "enfant", "familial", "innocent", "mignon", "ensemble"],
-                "phrases": ["film pour famille", "avec les enfants", "film familial", "tout public"],
-                "target_genres": {"Familial": 2.5, "Animation": 2.0, "Comédie": 1.5, "Aventure": 1.3},
+                "keywords": ["famille"],  # SIMPLE : DÈS QU'IL Y A "FAMILLE" → BOOST FAMILIAL
+                "phrases": [],
+                "target_genres": {"Familial": 8.0, "Animation": 6.0, "Comédie": 4.0},
                 "boost_keywords": ["familial", "enfant", "mignon", "innocent", "éducatif", "bienveillant"]
             },
             
             # SCIENCE-FICTION / FUTUR / TECHNOLOGIE
             "futur": {
-                "keywords": ["futur", "science-fiction", "technologie", "espace", "alien", "robot"],
-                "phrases": ["science-fiction et futur", "dans le futur", "technologie avancée", "espace"],
-                "target_genres": {"Science-Fiction": 2.5, "Action": 1.5, "Thriller": 1.3},
+                "keywords": ["futur"],  # SIMPLE : DÈS QU'IL Y A "FUTUR" → BOOST SF
+                "phrases": [],
+                "target_genres": {"Science-Fiction": 8.0, "Action": 4.0},
                 "boost_keywords": ["futuriste", "technologique", "spatial", "alien", "robot", "cyberpunk"]
             },
             
             # MYSTÈRE / SUSPENSE / ENQUÊTE
             "mystere": {
-                "keywords": ["mystère", "suspense", "enquête", "secret", "énigme", "investigation"],
-                "phrases": ["mystère et suspense", "une enquête", "plein de mystères", "découvrir un secret"],
-                "target_genres": {"Mystère": 2.5, "Thriller": 2.0, "Crime": 1.8, "Drame": 1.3},
+                "keywords": ["mystère"],  # SIMPLE : DÈS QU'IL Y A "MYSTÈRE" → BOOST MYSTÈRE
+                "phrases": [],
+                "target_genres": {"Mystère": 8.0, "Thriller": 6.0, "Crime": 4.0},
                 "boost_keywords": ["mystérieux", "énigmatique", "secret", "investigation", "détective", "révélation"]
             }
         }
