@@ -1,0 +1,4 @@
+# Dépendances pour le serveur de notifications push
+pywebpush==1.14.0
+supabase==2.3.4
+asyncio

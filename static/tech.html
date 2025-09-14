@@ -2601,8 +2601,8 @@
 
             async subscribeToPushNotifications(registration) {
                 try {
-                    // VAPID public key (à générer avec web-push)
-                    const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa40HdHSWgBfZbdPJSiSRSUVpid85u2x8GmgpqAkOJ7-vdNyZ0lG__2TJ0O-0Y';
+                    // VAPID public key (nouvelle clé générée)
+                    const vapidPublicKey = 'BJ4pekcDDk3Zc-B0IEq1pgkkrI-xjtfrE1V853ynp0YWlcaRi0nRPNDaIAqkXUvM8vhjkGo3OtbwfNGTZX2dBGY';
 
                     const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
@@ -2719,6 +2719,29 @@
                             event: 'new_notification',
                             payload: notification
                         });
+
+                    // Envoyer les vraies notifications push via l'API
+                    try {
+                        const pushResponse = await fetch('/api/send_push', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                is_admin: true,
+                                notification: notification
+                            })
+                        });
+
+                        const pushResult = await pushResponse.json();
+                        if (pushResult.success) {
+                            console.log('📱 Push notifications sent:', pushResult.message);
+                        } else {
+                            console.error('❌ Push notification error:', pushResult.message);
+                        }
+                    } catch (pushError) {
+                        console.error('❌ Error sending push notifications:', pushError);
+                    }
 
                     // Reset form and update UI
                     document.getElementById('adminNotificationMessage').value = '';
