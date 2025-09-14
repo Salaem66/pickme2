@@ -2720,8 +2720,13 @@
                             payload: notification
                         });
 
-                    // Envoyer les vraies notifications push via l'API
+                    // Envoyer les vraies notifications push via l'API (désactivé temporairement)
                     try {
+                        // Note: Push API désactivée en attendant configuration serveur
+                        console.log('📱 Push notifications would be sent for:', notification.message);
+
+                        // TODO: Réactiver quand pywebpush sera installé sur Railway
+                        /*
                         const pushResponse = await fetch('/api/send_push', {
                             method: 'POST',
                             headers: {
@@ -2739,6 +2744,7 @@
                         } else {
                             console.error('❌ Push notification error:', pushResult.message);
                         }
+                        */
                     } catch (pushError) {
                         console.error('❌ Error sending push notifications:', pushError);
                     }
