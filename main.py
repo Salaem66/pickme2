@@ -214,24 +214,24 @@ async def search_movies(
 
         # AJOUT SPÉCIAL : Si recherche "peur" avec boost Horreur >= 7.0, forcer l'ajout des films d'horreur populaires
         if genre_boosts and 'Horreur' in genre_boosts and genre_boosts['Horreur'] >= 7.0:
-            logger.info(f"🔥 RECHERCHE PEUR DÉTECTÉE - Ajout forcé des films d'horreur populaires")
+            logger.info(f"🔥 RECHERCHE PEUR DÉTECTÉE - Injection FORCÉE des films d'horreur populaires")
 
             # Requête pour récupérer les films d'horreur populaires (vote_average >= 6.5)
-            horror_query = supabase.from_('movies').select('*').contains('genres', ['Horreur']).gte('vote_average', 6.5).order('vote_average', desc=True).limit(10).execute()
+            horror_query = supabase.from_('movies').select('*').contains('genres', ['Horreur']).gte('vote_average', 6.5).order('vote_average', desc=True).limit(15).execute()
 
             if horror_query.data:
-                existing_ids = {movie['id'] for movie in result.data or []}
+                # TOUJOURS ajouter les films d'horreur - même s'ils existent déjà
+                if not result.data:
+                    result.data = []
 
+                # Ajouter TOUS les films d'horreur populaires avec boost
                 for horror_movie in horror_query.data:
-                    if horror_movie['id'] not in existing_ids:
-                        # Ajouter avec similarité très faible pour que le boost s'applique
-                        horror_movie['similarity'] = 0.05  # Très faible similarité de base
-                        if not result.data:
-                            result.data = []
-                        result.data.append(horror_movie)
-                        logger.info(f"➕ Ajout forcé: {horror_movie.get('title')} ({horror_movie.get('vote_average')})")
+                    horror_movie['similarity'] = 0.9  # Similarité très élevée pour être en tête
+                    horror_movie['forced_injection'] = True  # Marquer comme injecté
+                    result.data.append(horror_movie)
+                    logger.info(f"💉 INJECTION FORCÉE: {horror_movie.get('title')} ({horror_movie.get('vote_average')})")
 
-                logger.info(f"🎬 {len(result.data)} films au total après ajout des horreurs populaires")
+                logger.info(f"🎬 {len(result.data)} films au total après injection FORCÉE des horreurs populaires")
         
         if not result.data:
             return JSONResponse({
@@ -340,24 +340,24 @@ async def search_movies_post(request: Request):
 
         # AJOUT SPÉCIAL : Si recherche "peur" avec boost Horreur >= 7.0, forcer l'ajout des films d'horreur populaires
         if genre_boosts and 'Horreur' in genre_boosts and genre_boosts['Horreur'] >= 7.0:
-            logger.info(f"🔥 RECHERCHE PEUR DÉTECTÉE (POST) - Ajout forcé des films d'horreur populaires")
+            logger.info(f"🔥 RECHERCHE PEUR DÉTECTÉE (POST) - Injection FORCÉE des films d'horreur populaires")
 
             # Requête pour récupérer les films d'horreur populaires (vote_average >= 6.5)
-            horror_query = supabase.from_('movies').select('*').contains('genres', ['Horreur']).gte('vote_average', 6.5).order('vote_average', desc=True).limit(10).execute()
+            horror_query = supabase.from_('movies').select('*').contains('genres', ['Horreur']).gte('vote_average', 6.5).order('vote_average', desc=True).limit(15).execute()
 
             if horror_query.data:
-                existing_ids = {movie['id'] for movie in result.data or []}
+                # TOUJOURS ajouter les films d'horreur - même s'ils existent déjà
+                if not result.data:
+                    result.data = []
 
+                # Ajouter TOUS les films d'horreur populaires avec boost
                 for horror_movie in horror_query.data:
-                    if horror_movie['id'] not in existing_ids:
-                        # Ajouter avec similarité très faible pour que le boost s'applique
-                        horror_movie['similarity'] = 0.05  # Très faible similarité de base
-                        if not result.data:
-                            result.data = []
-                        result.data.append(horror_movie)
-                        logger.info(f"➕ Ajout forcé (POST): {horror_movie.get('title')} ({horror_movie.get('vote_average')})")
+                    horror_movie['similarity'] = 0.9  # Similarité très élevée pour être en tête
+                    horror_movie['forced_injection'] = True  # Marquer comme injecté
+                    result.data.append(horror_movie)
+                    logger.info(f"💉 INJECTION FORCÉE: {horror_movie.get('title')} ({horror_movie.get('vote_average')})")
 
-                logger.info(f"🎬 {len(result.data)} films au total après ajout des horreurs populaires (POST)")
+                logger.info(f"🎬 {len(result.data)} films au total après injection FORCÉE des horreurs populaires (POST)")
         
         if not result.data:
             return JSONResponse({
