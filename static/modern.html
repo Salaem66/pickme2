@@ -126,19 +126,27 @@
             <div class="glass rounded-2xl p-8 space-y-6">
                 <div class="space-y-4">
                     <label class="text-lg font-medium text-slate-200">Comment tu te sens aujourd'hui ?</label>
-                    <div class="relative">
-                        <input 
-                            id="mainMoodInput" 
-                            type="text" 
+                    <div class="space-y-4">
+                        <input
+                            id="mainMoodInput"
+                            type="text"
                             placeholder="Ex: j'ai envie de rire, quelque chose d'intense..."
                             class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         />
-                        <button 
-                            id="searchBtn"
-                            class="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-all duration-200 hover:scale-105"
-                        >
-                            🔍
-                        </button>
+                        <div class="flex gap-3">
+                            <button
+                                id="searchBtn"
+                                class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-all duration-200 hover:scale-105 text-lg"
+                            >
+                                🔍
+                            </button>
+                            <button
+                                id="surpriseBtn"
+                                class="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 rounded-lg font-medium transition-all duration-200 hover:scale-105 text-lg text-white"
+                            >
+                                🎲
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -282,6 +290,7 @@
             setupEventListeners() {
                 // Search functionality
                 document.getElementById('searchBtn').addEventListener('click', () => this.searchMovies());
+                document.getElementById('surpriseBtn').addEventListener('click', () => this.surpriseMe());
                 document.getElementById('mainMoodInput').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.searchMovies();
                 });
@@ -433,7 +442,67 @@
                         '<div class="glass rounded-2xl p-8 text-center"><h2 class="text-xl font-semibold mb-2 text-red-400">Erreur</h2><p class="text-slate-400">Impossible de charger les films</p></div>';
                 }
             }
-            
+
+            async surpriseMe() {
+                // Array de requêtes surprise prédéfinies
+                const surpriseQueries = [
+                    "j'ai envie de rire",
+                    "je veux de l'action",
+                    "quelque chose de romantique",
+                    "j'ai envie d'avoir peur",
+                    "un film émouvant",
+                    "de la science-fiction",
+                    "une aventure épique",
+                    "un film mystérieux",
+                    "quelque chose de nostalgique",
+                    "un film familial",
+                    "j'ai envie de pleurer",
+                    "quelque chose d'inspirant"
+                ];
+
+                // Choisir une requête au hasard
+                const randomQuery = surpriseQueries[Math.floor(Math.random() * surpriseQueries.length)];
+
+                // Mettre à jour l'input avec la requête choisie
+                document.getElementById('mainMoodInput').value = randomQuery;
+
+                try {
+                    const response = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            query: randomQuery,
+                            limit: 50,
+                            platforms: [],
+                            threshold: 0.1
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.results && data.results.length > 0) {
+                        this.movies = data.results;
+                        this.currentIndex = 0;
+                        this.showTinderPage();
+                        this.renderCard();
+
+                        // Notification spéciale pour "Surprise"
+                        this.showNotification(`🎲 Surprise! Films pour: "${randomQuery}"`);
+                    } else {
+                        document.getElementById('cardStack').innerHTML =
+                            '<div class="glass rounded-2xl p-8 text-center"><h2 class="text-xl font-semibold mb-2 text-red-400">Aucun film trouvé</h2><p class="text-slate-400">Essayez une autre recherche</p></div>';
+                    }
+                } catch (error) {
+                    console.error('Surprise search error:', error);
+                    document.getElementById('cardStack').innerHTML =
+                        '<div class="glass rounded-2xl p-8 text-center"><h2 class="text-xl font-semibold mb-2 text-red-400">Erreur</h2><p class="text-slate-400">Impossible de charger les films</p></div>';
+                }
+            }
+
             showSearchPage() {
                 document.getElementById('searchPage').style.display = 'flex';
                 document.getElementById('tinderPage').style.display = 'none';

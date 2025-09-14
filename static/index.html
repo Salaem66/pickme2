@@ -92,6 +92,20 @@
             cursor: not-allowed;
             transform: none;
         }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .surprise-btn {
+            background: linear-gradient(45deg, #9c27b0, #673ab7);
+        }
+
+        .surprise-btn:hover {
+            background: linear-gradient(45deg, #7b1fa2, #512da8);
+        }
         
         .mood-suggestions {
             display: flex;
@@ -282,13 +296,16 @@
         <div class="content">
             <div class="search-section">
                 <div class="search-box">
-                    <input 
-                        type="text" 
-                        id="moodInput" 
-                        class="mood-input" 
+                    <input
+                        type="text"
+                        id="moodInput"
+                        class="mood-input"
                         placeholder="Décris ton humeur... (ex: je me sens nostalgique, j'ai envie de rire...)"
                     >
-                    <button id="searchBtn" class="search-btn">Rechercher</button>
+                    <div class="button-container">
+                        <button id="searchBtn" class="search-btn">🔍</button>
+                        <button id="surpriseBtn" class="search-btn surprise-btn">🎲</button>
+                    </div>
                 </div>
                 
                 <div class="mood-suggestions">
@@ -327,6 +344,7 @@
             
             // Event listeners
             document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('surpriseBtn').addEventListener('click', performSurprise);
             document.getElementById('moodInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') performSearch();
             });
@@ -424,6 +442,36 @@
             }).join('');
 
             resultsSection.style.display = 'block';
+        }
+
+        async function performSurprise() {
+            // Array de requêtes surprise prédéfinies
+            const surpriseQueries = [
+                "j'ai envie de rire",
+                "je veux de l'action",
+                "quelque chose de romantique",
+                "j'ai envie d'avoir peur",
+                "un film émouvant",
+                "de la science-fiction",
+                "une aventure épique",
+                "un film mystérieux",
+                "quelque chose de nostalgique",
+                "un film familial",
+                "j'ai envie de pleurer",
+                "quelque chose d'inspirant"
+            ];
+
+            // Choisir une requête au hasard
+            const randomQuery = surpriseQueries[Math.floor(Math.random() * surpriseQueries.length)];
+
+            // Mettre à jour l'input avec la requête choisie
+            document.getElementById('moodInput').value = randomQuery;
+
+            // Exécuter la recherche avec la requête surprise
+            await performSearch();
+
+            // Notification spéciale
+            alert(`🎲 Surprise! Films pour: "${randomQuery}"`);
         }
 
         async function loadStats() {

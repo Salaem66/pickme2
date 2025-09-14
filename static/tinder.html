@@ -200,6 +200,17 @@
             border-radius: 20px;
             cursor: pointer;
             font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .surprise-btn {
+            background: linear-gradient(45deg, #9c27b0, #673ab7);
+            transition: all 0.3s;
+        }
+
+        .surprise-btn:hover {
+            background: linear-gradient(45deg, #7b1fa2, #512da8);
+            transform: translateY(-1px);
         }
         
         .watchlist-counter {
@@ -540,7 +551,8 @@
         <div class="logo">🎬 VibeFilms</div>
         <div class="controls">
             <input type="text" id="moodInput" class="mood-input" placeholder="Ton mood...">
-            <button id="searchBtn" class="search-btn">Découvrir</button>
+            <button id="searchBtn" class="search-btn">🔍</button>
+            <button id="surpriseBtn" class="search-btn surprise-btn">🎲</button>
             <div id="watchlistCounter" class="watchlist-counter">
                 📚 <span id="watchlistCount">0</span>
             </div>
@@ -642,6 +654,7 @@
                 
                 // Header de la page Tinder (pour recherche rapide)
                 document.getElementById('searchBtn').addEventListener('click', () => this.searchMovies());
+                document.getElementById('surpriseBtn').addEventListener('click', () => this.surpriseMe());
                 document.getElementById('moodInput').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.searchMovies();
                 });
@@ -708,7 +721,70 @@
                         '<div class="no-more-cards"><h2>Erreur</h2><p>Impossible de charger les films</p></div>';
                 }
             }
-            
+
+            async surpriseMe() {
+                // Array de requêtes surprise prédéfinies
+                const surpriseQueries = [
+                    "j'ai envie de rire",
+                    "je veux de l'action",
+                    "quelque chose de romantique",
+                    "j'ai envie d'avoir peur",
+                    "un film émouvant",
+                    "de la science-fiction",
+                    "une aventure épique",
+                    "un film mystérieux",
+                    "quelque chose de nostalgique",
+                    "un film familial",
+                    "j'ai envie de pleurer",
+                    "quelque chose d'inspirant"
+                ];
+
+                // Choisir une requête au hasard
+                const randomQuery = surpriseQueries[Math.floor(Math.random() * surpriseQueries.length)];
+
+                // Mettre à jour les inputs avec la requête choisie
+                const mainInput = document.getElementById('mainMoodInput');
+                const headerInput = document.getElementById('moodInput');
+                if (mainInput) mainInput.value = randomQuery;
+                if (headerInput) headerInput.value = randomQuery;
+
+                try {
+                    const response = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            query: randomQuery,
+                            limit: 50,
+                            platforms: [],
+                            threshold: 0.1
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.results && data.results.length > 0) {
+                        this.movies = data.results;
+                        this.currentIndex = 0;
+                        this.showTinderPage();
+                        this.renderCard();
+
+                        // Notification spéciale pour "Surprise"
+                        this.showNotification(`🎲 Surprise! Films pour: "${randomQuery}"`);
+                    } else {
+                        document.getElementById('cardStack').innerHTML =
+                            '<div class="no-more-cards"><h2>Aucun film trouvé</h2><p>Essayez une autre recherche</p></div>';
+                    }
+                } catch (error) {
+                    console.error('Surprise search error:', error);
+                    document.getElementById('cardStack').innerHTML =
+                        '<div class="no-more-cards"><h2>Erreur</h2><p>Impossible de charger les films</p></div>';
+                }
+            }
+
             showSearchPage() {
                 document.getElementById('searchPage').style.display = 'flex';
                 document.getElementById('tinderPage').style.display = 'none';
