@@ -431,6 +431,55 @@ async def search_movies_post(request: Request):
         logger.error(f"❌ Erreur recherche POST: {e}")
         raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
+@app.post("/api/send_push")
+async def send_push_notifications(request: Request):
+    """
+    Endpoint pour envoyer des notifications push natives
+    Utilisé par le panneau admin pour diffuser des notifications
+    """
+    try:
+        data = await request.json()
+
+        # Vérification admin (basique pour prototype)
+        is_admin = data.get('is_admin', False)
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Admin access required")
+
+        notification = data.get('notification')
+        if not notification:
+            raise HTTPException(status_code=400, detail="Notification data required")
+
+        # Import du gestionnaire de push
+        try:
+            from push_notifications import send_admin_notification_push
+
+            # Envoyer les notifications push
+            result = await send_admin_notification_push(notification)
+
+            return JSONResponse({
+                "success": True,
+                "message": result.get('message', 'Notifications sent'),
+                "sent": result.get('sent', 0),
+                "total": result.get('total', 0),
+                "success_rate": result.get('success_rate', '0%')
+            })
+
+        except ImportError:
+            # Fallback si les dépendances push ne sont pas disponibles
+            return JSONResponse({
+                "success": False,
+                "error": "Push dependencies not available",
+                "message": "Install pywebpush to enable native push notifications",
+                "sent": 0,
+                "total": 0
+            })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Push notification error: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 @app.get("/api/health")
 async def health_check():
     """Vérification de santé du service"""

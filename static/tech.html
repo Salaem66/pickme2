@@ -2720,13 +2720,8 @@
                             payload: notification
                         });
 
-                    // Envoyer les vraies notifications push via l'API (désactivé temporairement)
+                    // Envoyer les vraies notifications push via l'API
                     try {
-                        // Note: Push API désactivée en attendant configuration serveur
-                        console.log('📱 Push notifications would be sent for:', notification.message);
-
-                        // TODO: Réactiver quand pywebpush sera installé sur Railway
-                        /*
                         const pushResponse = await fetch('/api/send_push', {
                             method: 'POST',
                             headers: {
@@ -2740,13 +2735,23 @@
 
                         const pushResult = await pushResponse.json();
                         if (pushResult.success) {
-                            console.log('📱 Push notifications sent:', pushResult.message);
+                            console.log(`📱 Push notifications sent: ${pushResult.sent}/${pushResult.total} (${pushResult.success_rate})`);
+
+                            // Afficher le résultat dans l'interface
+                            if (pushResult.sent > 0) {
+                                this.showNotification(`📱 ${pushResult.sent} notifications push envoyées !`, 'success');
+                            } else if (pushResult.total === 0) {
+                                this.showNotification('ℹ️ Aucun abonnement push actif', 'info');
+                            }
                         } else {
-                            console.error('❌ Push notification error:', pushResult.message);
+                            console.warn('⚠️ Push notification warning:', pushResult.message);
+                            if (pushResult.error === "Push dependencies not available") {
+                                console.log('🔧 Push dependencies not installed - using Realtime only');
+                            }
                         }
-                        */
                     } catch (pushError) {
                         console.error('❌ Error sending push notifications:', pushError);
+                        // Ne pas bloquer l'envoi de notification pour cette erreur
                     }
 
                     // Reset form and update UI
