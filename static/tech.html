@@ -43,7 +43,8 @@
                     animation: {
                         'fade-in': 'fadeIn 0.6s ease-out',
                         'slide-up': 'slideUp 0.5s ease-out',
-                        'scale-in': 'scaleIn 0.3s ease-out'
+                        'scale-in': 'scaleIn 0.3s ease-out',
+                        'slide-in': 'slideInFromRight 0.4s ease-out'
                     },
                     keyframes: {
                         fadeIn: {
@@ -57,6 +58,10 @@
                         scaleIn: {
                             '0%': { opacity: '0', transform: 'scale(0.95)' },
                             '100%': { opacity: '1', transform: 'scale(1)' }
+                        },
+                        slideInFromRight: {
+                            '0%': { opacity: '0', transform: 'translateX(100%)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' }
                         }
                     }
                 }
@@ -537,6 +542,9 @@
                         this.handleAuthSuccess(session.user, true); // true = reconnexion automatique
 
                         // Les données sont déjà synchronisées dans handleAuthSuccess
+
+                        // Vérifier et proposer les notifications push pour les utilisateurs existants
+                        setTimeout(() => this.checkPushSubscriptionForExistingUser(), 2000);
                     } else {
                         console.log('👤 Aucune session active - utilisateur anonyme');
                     }
@@ -550,6 +558,9 @@
                                 if (session && session.user) {
                                     this.handleAuthSuccess(session.user, false); // false = connexion manuelle
                                     // Les données sont déjà synchronisées dans handleAuthSuccess
+
+                                    // Vérifier et proposer les notifications push pour les nouvelles connexions
+                                    setTimeout(() => this.checkPushSubscriptionForExistingUser(), 1500);
                                 }
                                 break;
                             case 'SIGNED_OUT':
@@ -2864,6 +2875,114 @@
                     .subscribe();
 
                 console.log('🔔 Notification listener configured via Supabase Realtime');
+            }
+
+            async checkPushSubscriptionForExistingUser() {
+                console.log('🔍 Checking push subscription for existing user...');
+
+                if (!this.currentUser) {
+                    console.log('❌ No current user - cannot check subscription');
+                    return;
+                }
+
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    console.log('❌ Push notifications not supported on this device');
+                    return;
+                }
+
+                try {
+                    // Vérifier si l'utilisateur a déjà une souscription active dans la base
+                    const { data: existingSubscription, error } = await this.supabase
+                        .from('push_subscriptions')
+                        .select('*')
+                        .eq('user_id', this.currentUser.id)
+                        .eq('is_active', true)
+                        .limit(1);
+
+                    if (error) {
+                        console.warn('❌ Error checking subscription:', error);
+                        return;
+                    }
+
+                    // Si l'utilisateur n'a pas d'abonnement actif, lui proposer
+                    if (!existingSubscription || existingSubscription.length === 0) {
+                        console.log('📱 No active push subscription found for user - offering subscription');
+
+                        // Attendre un peu pour ne pas spammer l'utilisateur
+                        setTimeout(() => this.offerPushSubscriptionToExistingUser(), 3000);
+                    } else {
+                        console.log('✅ User already has active push subscription');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error in checkPushSubscriptionForExistingUser:', error);
+                }
+            }
+
+            async offerPushSubscriptionToExistingUser() {
+                // Vérifier que les notifications ne sont pas déjà accordées
+                if (Notification.permission === 'granted') {
+                    console.log('🔔 Notifications already granted - attempting automatic subscription');
+                    await this.initializePushNotifications();
+                    return;
+                }
+
+                if (Notification.permission === 'denied') {
+                    console.log('🚫 Notifications denied by user');
+                    return;
+                }
+
+                // Afficher une proposition discrète aux utilisateurs existants
+                const offerModal = document.createElement('div');
+                offerModal.className = 'fixed bottom-4 right-4 z-50 max-w-sm animate-slide-in';
+                offerModal.innerHTML = `
+                    <div class="glass rounded-2xl p-4 border border-white/20">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6h11"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-white mb-1">Notifications PickMe</h4>
+                                <p class="text-xs text-white/70 mb-3">Recevez nos recommandations et mises à jour directement sur votre écran !</p>
+                                <div class="flex space-x-2">
+                                    <button onclick="app.enablePushNotificationsFromOffer(); this.closest('.fixed').remove();"
+                                        class="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-lg text-xs font-medium text-blue-300 hover:bg-blue-500/30 transition-all">
+                                        Activer
+                                    </button>
+                                    <button onclick="this.closest('.fixed').remove();"
+                                        class="px-3 py-1.5 text-xs text-white/60 hover:text-white/80 transition-colors">
+                                        Plus tard
+                                    </button>
+                                </div>
+                            </div>
+                            <button onclick="this.closest('.fixed').remove();"
+                                class="flex-shrink-0 w-6 h-6 flex items-center justify-center text-white/40 hover:text-white/60 transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(offerModal);
+
+                // Auto-supprimer après 10 secondes
+                setTimeout(() => {
+                    if (offerModal.parentNode) {
+                        offerModal.remove();
+                    }
+                }, 10000);
+            }
+
+            async enablePushNotificationsFromOffer() {
+                console.log('🔔 User accepted push notifications from offer');
+                await this.initializePushNotifications();
             }
 
             async sendPushNotification(notification) {
