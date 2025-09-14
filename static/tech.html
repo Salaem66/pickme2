@@ -394,26 +394,70 @@
             }
             
             async initSupabase() {
-                // Configuration Supabase
-                const supabaseUrl = 'https://utzflwmghpojlsthyuqf.supabase.co';
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0emZsd21naHBvamxzdGh5dXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDQxOTAsImV4cCI6MjA3MzEyMDE5MH0.j5qMspjG6FTN69DPwI0otqjw7Yp5lbbFadflpkjNvYc';
-                
-                this.supabase = supabase.createClient(supabaseUrl, supabaseKey);
-                
-                // Vérifier si l'utilisateur est déjà connecté
-                const { data: { session } } = await this.supabase.auth.getSession();
-                if (session) {
-                    this.handleAuthSuccess(session.user);
-                }
-                
-                // Écouter les changements d'authentification
-                this.supabase.auth.onAuthStateChange((event, session) => {
-                    if (event === 'SIGNED_IN' && session) {
-                        this.handleAuthSuccess(session.user);
-                    } else if (event === 'SIGNED_OUT') {
-                        this.handleAuthLogout();
+                try {
+                    // Configuration Supabase avec persistance automatique
+                    const supabaseUrl = 'https://utzflwmghpojlsthyuqf.supabase.co';
+                    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0emZsd21naHBvamxzdGh5dXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDQxOTAsImV4cCI6MjA3MzEyMDE5MH0.j5qMspjG6FTN69DPwI0otqjw7Yp5lbbFadflpkjNvYc';
+
+                    this.supabase = supabase.createClient(supabaseUrl, supabaseKey, {
+                        auth: {
+                            // Persistance automatique dans localStorage/PWA
+                            storage: window.localStorage,
+                            autoRefreshToken: true,
+                            persistSession: true,
+                            // Session reste valide pendant 7 jours d'inactivité
+                            storageKey: 'pickme-auth-token',
+                        }
+                    });
+
+                    // Vérifier si l'utilisateur est déjà connecté au chargement
+                    const { data: { session }, error } = await this.supabase.auth.getSession();
+
+                    if (error) {
+                        console.warn('Erreur de récupération de session:', error.message);
+                        // Continuer quand même, l'utilisateur pourra se reconnecter
                     }
-                });
+
+                    if (session && session.user) {
+                        console.log('✅ Session restaurée automatiquement pour:', session.user.email);
+                        this.handleAuthSuccess(session.user, true); // true = reconnexion automatique
+
+                        // Les données sont déjà synchronisées dans handleAuthSuccess
+                    } else {
+                        console.log('👤 Aucune session active - utilisateur anonyme');
+                    }
+
+                    // Écouter les changements d'authentification (connexion/déconnexion)
+                    this.supabase.auth.onAuthStateChange(async (event, session) => {
+                        console.log('🔄 Auth state change:', event, session?.user?.email || 'anonymous');
+
+                        switch (event) {
+                            case 'SIGNED_IN':
+                                if (session && session.user) {
+                                    this.handleAuthSuccess(session.user, false); // false = connexion manuelle
+                                    // Les données sont déjà synchronisées dans handleAuthSuccess
+                                }
+                                break;
+                            case 'SIGNED_OUT':
+                                this.handleAuthLogout();
+                                break;
+                            case 'TOKEN_REFRESHED':
+                                // Token rafraîchi automatiquement, rien à faire
+                                console.log('🔄 Token refreshed automatically');
+                                break;
+                            case 'USER_UPDATED':
+                                // Profil utilisateur mis à jour
+                                if (session && session.user) {
+                                    this.currentUser = session.user;
+                                }
+                                break;
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Erreur initialisation Supabase:', error);
+                    // L'app continue de fonctionner en mode hors ligne
+                }
             }
             
             init() {
@@ -2005,7 +2049,7 @@
                 }
             }
             
-            async handleAuthSuccess(user) {
+            async handleAuthSuccess(user, isAutoReconnect = false) {
                 this.isAuthenticated = true;
                 this.currentUser = user;
                 this.updateAuthUI();
@@ -2013,7 +2057,48 @@
                 // Charger la watchlist de l'utilisateur depuis Supabase
                 await this.loadUserWatchlist();
 
-                this.showNotification(`Bienvenue ${user.user_metadata?.name || user.email} ! 👋`, 'success');
+                // Synchroniser les ratings locaux avec Supabase
+                await this.syncLocalRatingsToSupabase();
+
+                // Message différent selon si c'est une reconnexion automatique ou manuelle
+                if (isAutoReconnect) {
+                    console.log(`🔄 Reconnecté automatiquement: ${user.user_metadata?.name || user.email}`);
+                    // Notification discrète pour la reconnexion automatique
+                    this.showNotification(`Bon retour ${user.user_metadata?.name?.split(' ')[0] || 'sur PickMe'} ! 🎬`, 'success');
+                } else {
+                    this.showNotification(`Bienvenue ${user.user_metadata?.name || user.email} ! 👋`, 'success');
+                }
+            }
+
+            // Synchroniser les ratings stockés localement avec Supabase
+            async syncLocalRatingsToSupabase() {
+                try {
+                    const localRatings = JSON.parse(localStorage.getItem('pickme-ratings') || '{}');
+                    const ratingsToSync = Object.entries(localRatings);
+
+                    if (ratingsToSync.length === 0) return;
+
+                    console.log(`🔄 Synchronisation de ${ratingsToSync.length} ratings locaux...`);
+
+                    for (const [movieId, ratingData] of ratingsToSync) {
+                        await this.supabase
+                            .from('user_ratings')
+                            .upsert({
+                                user_id: this.currentUser.id,
+                                movie_id: parseInt(movieId),
+                                movie_title: ratingData.movie_title || 'Titre inconnu',
+                                liked: ratingData.liked
+                            });
+                    }
+
+                    // Vider les ratings locaux après synchronisation
+                    localStorage.removeItem('pickme-ratings');
+                    console.log('✅ Ratings locaux synchronisés et nettoyés');
+
+                } catch (error) {
+                    console.warn('⚠️ Erreur lors de la synchronisation des ratings:', error);
+                    // Ne pas bloquer l'expérience utilisateur
+                }
             }
             
             handleAuthLogout() {
