@@ -79,3 +79,27 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
 });
+
+// Gestion des clics sur les notifications
+self.addEventListener('notificationclick', event => {
+  console.log('Clic sur notification:', event);
+
+  event.notification.close();
+
+  // Ouvrir ou focuser la fenêtre PickMe
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      // Si une fenêtre PickMe est déjà ouverte, la focuser
+      for (const client of clientList) {
+        if (client.url.includes('pickme.tv') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      // Sinon, ouvrir une nouvelle fenêtre
+      if (clients.openWindow) {
+        return clients.openWindow(event.notification.data?.url || 'https://app.pickme.tv');
+      }
+    })
+  );
+});
