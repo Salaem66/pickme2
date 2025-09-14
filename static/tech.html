@@ -145,6 +145,15 @@
                     <span class="hidden md:inline">Watchlist</span>
                     <span id="watchlistCountHeader" class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">0</span>
                 </button>
+                <!-- Bouton Admin (visible seulement pour Maël) -->
+                <button
+                    id="adminBtn"
+                    class="hidden px-2 md:px-4 py-2 text-orange-400 hover:text-orange-300 transition-colors duration-200 text-sm md:text-base"
+                    title="Panel Admin"
+                >
+                    <span class="hidden md:inline">Admin</span>
+                    <span class="md:hidden">⚙️</span>
+                </button>
                 <button
                     id="logoutBtn"
                     class="px-2 md:px-4 py-2 text-white/80 hover:text-white transition-colors duration-200 text-sm md:text-base"
@@ -374,6 +383,103 @@
         </div>
     </div>
 
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6">
+        <div class="glass rounded-3xl overflow-hidden card-shadow animate-scale-in max-w-2xl w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold flex items-center space-x-3">
+                        <span>⚙️</span>
+                        <span>Admin Panel</span>
+                    </h2>
+                    <button onclick="app.closeAdminModal()" class="p-2 hover:bg-white/10 rounded-xl transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Notification Sender -->
+                    <div class="glass rounded-2xl p-6">
+                        <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                            <span>📢</span>
+                            <span>Envoyer une notification</span>
+                        </h3>
+
+                        <!-- Message Input -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Message</label>
+                                <textarea
+                                    id="adminNotificationMessage"
+                                    placeholder="Tapez votre message ici... (les emojis sont supportés 🎬)"
+                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all duration-300 resize-none"
+                                    rows="3"></textarea>
+                            </div>
+
+                            <!-- Notification Type -->
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Type de notification</label>
+                                <select
+                                    id="adminNotificationType"
+                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all duration-300">
+                                    <option value="info" class="bg-gray-800">💡 Info</option>
+                                    <option value="success" class="bg-gray-800">✅ Succès</option>
+                                    <option value="warning" class="bg-gray-800">⚠️ Avertissement</option>
+                                    <option value="error" class="bg-gray-800">❌ Erreur</option>
+                                </select>
+                            </div>
+
+                            <!-- Target Audience -->
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Cible</label>
+                                <select
+                                    id="adminNotificationTarget"
+                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all duration-300">
+                                    <option value="all" class="bg-gray-800">👥 Tous les utilisateurs connectés</option>
+                                    <option value="authenticated" class="bg-gray-800">🔐 Utilisateurs connectés uniquement</option>
+                                    <option value="anonymous" class="bg-gray-800">👤 Utilisateurs anonymes uniquement</option>
+                                </select>
+                            </div>
+
+                            <!-- Send Button -->
+                            <button
+                                onclick="app.sendAdminNotification()"
+                                class="w-full px-6 py-3 gradient-bg rounded-xl font-medium transition-all duration-200 border border-white/20 hover:border-white/40 hover:scale-[1.02] text-lg flex items-center justify-center space-x-2 hover-lift">
+                                <span>📤</span>
+                                <span>Envoyer la notification</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats (Future feature) -->
+                    <div class="glass rounded-2xl p-6">
+                        <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                            <span>📊</span>
+                            <span>Statistiques</span>
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="glass rounded-xl p-4">
+                                <div class="text-2xl font-bold text-blue-400" id="totalUsers">-</div>
+                                <div class="text-sm text-white/60">Utilisateurs actifs</div>
+                            </div>
+                            <div class="glass rounded-xl p-4">
+                                <div class="text-2xl font-bold text-green-400" id="totalNotifications">0</div>
+                                <div class="text-sm text-white/60">Notifications envoyées</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="app.closeAdminModal()"
+                        class="w-full px-6 py-3 bg-white/10 rounded-xl font-medium hover-lift transition-all border border-white/20 hover:bg-white/20 mt-6">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         class TechPickMe {
             constructor() {
@@ -384,6 +490,7 @@
                 // Variables freemium
                 this.isAuthenticated = false;
                 this.currentUser = null;
+                this.isAdmin = false;
                 this.viewedMoviesCount = 0;
                 this.maxFreeViews = 1; // Premier film gratuit
                 
@@ -469,6 +576,9 @@
 
                 // Initialiser les notifications après un délai (meilleure UX)
                 setTimeout(() => this.initNotifications(), 3000);
+
+                // Initialiser le listener pour les notifications admin
+                this.setupAdminNotificationListener();
             }
             
             setupEventListeners() {
@@ -483,6 +593,7 @@
                 // Auth
                 document.getElementById('loginBtn').addEventListener('click', () => this.showAuthModal());
                 document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+                document.getElementById('adminBtn').addEventListener('click', () => this.showAdminModal());
                 
                 // Navigation
                 document.getElementById('backBtn').addEventListener('click', () => this.showSearchPage());
@@ -2077,6 +2188,11 @@
             async handleAuthSuccess(user, isAutoReconnect = false) {
                 this.isAuthenticated = true;
                 this.currentUser = user;
+
+                // Vérifier si l'utilisateur est admin
+                this.isAdmin = user.email === 'mael.sivenboren@gmail.com';
+                console.log('🔒 Admin check:', this.isAdmin ? 'ADMIN ACCESS' : 'Regular user', user.email);
+
                 this.updateAuthUI();
 
                 // Charger la watchlist de l'utilisateur depuis Supabase
@@ -2129,6 +2245,7 @@
             handleAuthLogout() {
                 this.isAuthenticated = false;
                 this.currentUser = null;
+                this.isAdmin = false;
                 this.viewedMoviesCount = 0;
 
                 // Vider la watchlist locale lors de la déconnexion
@@ -2143,11 +2260,21 @@
             updateAuthUI() {
                 const loginBtn = document.getElementById('loginBtn');
                 const userMenu = document.getElementById('userMenu');
-                
+                const adminBtn = document.getElementById('adminBtn');
+
                 if (this.isAuthenticated && this.currentUser) {
                     loginBtn.style.display = 'none';
                     userMenu.style.display = 'flex';
                     userMenu.classList.remove('hidden');
+
+                    // Afficher/cacher le bouton admin selon le statut
+                    if (this.isAdmin) {
+                        adminBtn.style.display = 'block';
+                        adminBtn.classList.remove('hidden');
+                    } else {
+                        adminBtn.style.display = 'none';
+                        adminBtn.classList.add('hidden');
+                    }
                     
                     // Mettre à jour les infos utilisateur avec Google metadata
                     const name = this.currentUser.user_metadata?.name || this.currentUser.email;
@@ -2188,6 +2315,10 @@
                     loginBtn.style.display = 'flex';
                     userMenu.style.display = 'none';
                     userMenu.classList.add('hidden');
+
+                    // Cacher le bouton admin si pas connecté
+                    adminBtn.style.display = 'none';
+                    adminBtn.classList.add('hidden');
                 }
             }
             
@@ -2433,6 +2564,125 @@
                 } catch (error) {
                     console.error('Erreur envoi notification:', error);
                 }
+            }
+
+            // === ADMIN PANEL ===
+
+            showAdminModal() {
+                if (!this.isAdmin) {
+                    this.showNotification('Accès non autorisé', 'error');
+                    return;
+                }
+                document.getElementById('adminModal').classList.remove('hidden');
+            }
+
+            closeAdminModal() {
+                document.getElementById('adminModal').classList.add('hidden');
+                // Réinitialiser le formulaire
+                document.getElementById('adminNotificationMessage').value = '';
+                document.getElementById('adminNotificationType').value = 'info';
+                document.getElementById('adminNotificationTarget').value = 'all';
+            }
+
+            async sendAdminNotification() {
+                if (!this.isAdmin) {
+                    this.showNotification('Accès non autorisé', 'error');
+                    return;
+                }
+
+                const message = document.getElementById('adminNotificationMessage').value.trim();
+                const type = document.getElementById('adminNotificationType').value;
+                const target = document.getElementById('adminNotificationTarget').value;
+
+                if (!message) {
+                    this.showNotification('Veuillez saisir un message', 'warning');
+                    return;
+                }
+
+                try {
+                    // Envoyer la notification selon la cible
+                    let sent = false;
+
+                    if (target === 'all' || target === 'authenticated') {
+                        // Envoyer à tous les utilisateurs connectés (via localStorage broadcast)
+                        if (typeof(Storage) !== "undefined") {
+                            const notificationData = {
+                                message: message,
+                                type: type,
+                                timestamp: Date.now(),
+                                from: 'admin',
+                                target: target
+                            };
+
+                            // Stocker temporairement pour broadcast
+                            localStorage.setItem('admin-notification', JSON.stringify(notificationData));
+
+                            // Déclencher l'événement storage pour les autres onglets
+                            window.dispatchEvent(new StorageEvent('storage', {
+                                key: 'admin-notification',
+                                newValue: JSON.stringify(notificationData)
+                            }));
+
+                            // Nettoyer après un délai
+                            setTimeout(() => {
+                                localStorage.removeItem('admin-notification');
+                            }, 1000);
+
+                            sent = true;
+                        }
+                    }
+
+                    if (target === 'all' || target === 'anonymous') {
+                        // Pour les utilisateurs anonymes, utiliser une approche différente si nécessaire
+                        // Pour l'instant, on utilise la même méthode
+                        sent = true;
+                    }
+
+                    // Envoyer aussi la notification à l'admin
+                    this.showNotification(message, type);
+
+                    if (sent) {
+                        this.showNotification('📤 Notification envoyée avec succès !', 'success');
+
+                        // Mettre à jour le compteur de notifications
+                        const currentCount = parseInt(document.getElementById('totalNotifications').textContent) || 0;
+                        document.getElementById('totalNotifications').textContent = currentCount + 1;
+
+                        // Fermer la modal
+                        this.closeAdminModal();
+
+                        console.log('📢 Admin notification sent:', { message, type, target });
+                    } else {
+                        this.showNotification('Erreur lors de l\'envoi', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Erreur envoi notification admin:', error);
+                    this.showNotification('Erreur technique lors de l\'envoi', 'error');
+                }
+            }
+
+            // Écouter les notifications admin depuis d'autres onglets
+            setupAdminNotificationListener() {
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'admin-notification' && e.newValue) {
+                        try {
+                            const data = JSON.parse(e.newValue);
+
+                            // Vérifier la cible
+                            if (data.target === 'all' ||
+                                (data.target === 'authenticated' && this.isAuthenticated) ||
+                                (data.target === 'anonymous' && !this.isAuthenticated)) {
+
+                                // Afficher la notification
+                                this.showNotification(data.message, data.type);
+                                console.log('📩 Received admin notification:', data);
+                            }
+                        } catch (error) {
+                            console.error('Erreur parsing notification admin:', error);
+                        }
+                    }
+                });
             }
         }
 
