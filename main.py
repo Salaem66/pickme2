@@ -7,7 +7,7 @@ Moteur de recherche de films par mood avec Supabase
 import os
 from fastapi import FastAPI, HTTPException, Query, Request, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 import uvicorn
@@ -144,23 +144,35 @@ async def root():
     with open("static/tech.html", "r", encoding="utf-8") as f:
         return HTMLResponse(f.read())
 
-@app.get("/modern", response_class=HTMLResponse)
-async def modern_interface():
-    """Interface moderne"""
-    with open("static/modern.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+# PWA Routes
+@app.get("/manifest.json")
+async def manifest():
+    """PWA Manifest"""
+    with open("static/manifest.json", "r", encoding="utf-8") as f:
+        import json
+        content = json.loads(f.read())
+        return JSONResponse(
+            content=content,
+            headers={"Content-Type": "application/manifest+json"}
+        )
 
-@app.get("/classic", response_class=HTMLResponse)
-async def classic_interface():
-    """Interface classique"""
-    with open("static/index.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+@app.get("/sw.js")
+async def service_worker():
+    """PWA Service Worker"""
+    with open("static/sw.js", "r", encoding="utf-8") as f:
+        return Response(
+            content=f.read(),
+            media_type="application/javascript"
+        )
 
-@app.get("/tinder", response_class=HTMLResponse)
-async def tinder_interface():
-    """Interface style Tinder"""
-    with open("static/tinder.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+@app.get("/pickme_logo.png")
+async def app_icon():
+    """App Icon for PWA"""
+    with open("static/pickme_logo.png", "rb") as f:
+        return Response(
+            content=f.read(),
+            media_type="image/png"
+        )
 
 @app.get("/test-auth", response_class=HTMLResponse)
 async def test_auth_interface():
