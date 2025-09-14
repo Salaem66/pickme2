@@ -80,6 +80,41 @@ self.addEventListener('message', event => {
   }
 });
 
+// Gestion des messages push
+self.addEventListener('push', event => {
+  console.log('Push message reçu:', event);
+
+  if (!event.data) {
+    console.log('Push message sans données');
+    return;
+  }
+
+  let notificationData;
+  try {
+    notificationData = event.data.json();
+  } catch (e) {
+    console.error('Erreur parsing push data:', e);
+    notificationData = {
+      title: 'PickMe',
+      body: event.data.text(),
+      icon: '/pickme_logo.png'
+    };
+  }
+
+  const options = {
+    body: notificationData.body || notificationData.message,
+    icon: notificationData.icon || '/pickme_logo.png',
+    badge: '/pickme_logo.png',
+    data: notificationData.data || { url: '/' },
+    requireInteraction: true,
+    actions: notificationData.actions || []
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title || 'PickMe', options)
+  );
+});
+
 // Gestion des clics sur les notifications
 self.addEventListener('notificationclick', event => {
   console.log('Clic sur notification:', event);
@@ -91,14 +126,15 @@ self.addEventListener('notificationclick', event => {
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       // Si une fenêtre PickMe est déjà ouverte, la focuser
       for (const client of clientList) {
-        if (client.url.includes('pickme.tv') && 'focus' in client) {
+        if (client.url.includes('pickme') || client.url.includes('localhost') && 'focus' in client) {
           return client.focus();
         }
       }
 
       // Sinon, ouvrir une nouvelle fenêtre
       if (clients.openWindow) {
-        return clients.openWindow(event.notification.data?.url || 'https://app.pickme.tv');
+        const url = event.notification.data?.url || '/';
+        return clients.openWindow(url);
       }
     })
   );

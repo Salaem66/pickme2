@@ -577,8 +577,11 @@
                 // Initialiser les notifications après un délai (meilleure UX)
                 setTimeout(() => this.initNotifications(), 3000);
 
-                // Initialiser le listener pour les notifications admin
-                this.setupAdminNotificationListener();
+                // Initialiser les notifications push WebPush
+                setTimeout(() => this.initializePushNotifications(), 4000);
+
+                // Initialiser le listener pour les notifications admin via Supabase Realtime
+                this.setupRealtimeNotificationListener();
             }
             
             setupEventListeners() {
@@ -2566,6 +2569,94 @@
                 }
             }
 
+            // === WEBPUSH NOTIFICATIONS ===
+
+            async initializePushNotifications() {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    console.log('Push notifications non supportées');
+                    return;
+                }
+
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+
+                    // Vérifier si l'utilisateur est déjà abonné
+                    const existingSubscription = await registration.pushManager.getSubscription();
+
+                    if (existingSubscription) {
+                        console.log('Déjà abonné aux push notifications');
+                        await this.saveSubscription(existingSubscription);
+                    } else if (this.currentUser) {
+                        // Demander la permission pour les notifications
+                        const permission = await Notification.requestPermission();
+
+                        if (permission === 'granted') {
+                            await this.subscribeToPushNotifications(registration);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur initialisation push notifications:', error);
+                }
+            }
+
+            async subscribeToPushNotifications(registration) {
+                try {
+                    // VAPID public key (à générer avec web-push)
+                    const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa40HdHSWgBfZbdPJSiSRSUVpid85u2x8GmgpqAkOJ7-vdNyZ0lG__2TJ0O-0Y';
+
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey)
+                    });
+
+                    await this.saveSubscription(subscription);
+                    console.log('Abonnement push créé avec succès');
+                } catch (error) {
+                    console.error('Erreur création abonnement push:', error);
+                }
+            }
+
+            async saveSubscription(subscription) {
+                if (!this.currentUser) return;
+
+                try {
+                    const subscriptionData = {
+                        user_id: this.currentUser.id,
+                        endpoint: subscription.endpoint,
+                        p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))),
+                        auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')))),
+                        user_agent: navigator.userAgent
+                    };
+
+                    const { error } = await this.supabase
+                        .from('push_subscriptions')
+                        .upsert(subscriptionData, {
+                            onConflict: 'user_id,endpoint'
+                        });
+
+                    if (error) {
+                        console.error('Erreur sauvegarde subscription:', error);
+                    }
+                } catch (error) {
+                    console.error('Erreur sauvegarde subscription:', error);
+                }
+            }
+
+            urlBase64ToUint8Array(base64String) {
+                const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                const base64 = (base64String + padding)
+                    .replace(/\-/g, '+')
+                    .replace(/_/g, '/');
+
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+
+                for (let i = 0; i < rawData.length; ++i) {
+                    outputArray[i] = rawData.charCodeAt(i);
+                }
+                return outputArray;
+            }
+
             // === ADMIN PANEL ===
 
             showAdminModal() {
@@ -2574,6 +2665,8 @@
                     return;
                 }
                 document.getElementById('adminModal').classList.remove('hidden');
+                // Load notification history when opening admin panel
+                this.loadNotificationHistory();
             }
 
             closeAdminModal() {
@@ -2600,61 +2693,49 @@
                 }
 
                 try {
-                    // Envoyer la notification selon la cible
-                    let sent = false;
+                    // Save notification to Supabase
+                    const { data: notification, error } = await this.supabase
+                        .from('admin_notifications')
+                        .insert({
+                            message: message,
+                            type: type,
+                            target: target,
+                            created_by: this.currentUser.id
+                        })
+                        .select()
+                        .single();
 
-                    if (target === 'all' || target === 'authenticated') {
-                        // Envoyer à tous les utilisateurs connectés (via localStorage broadcast)
-                        if (typeof(Storage) !== "undefined") {
-                            const notificationData = {
-                                message: message,
-                                type: type,
-                                timestamp: Date.now(),
-                                from: 'admin',
-                                target: target
-                            };
-
-                            // Stocker temporairement pour broadcast
-                            localStorage.setItem('admin-notification', JSON.stringify(notificationData));
-
-                            // Déclencher l'événement storage pour les autres onglets
-                            window.dispatchEvent(new StorageEvent('storage', {
-                                key: 'admin-notification',
-                                newValue: JSON.stringify(notificationData)
-                            }));
-
-                            // Nettoyer après un délai
-                            setTimeout(() => {
-                                localStorage.removeItem('admin-notification');
-                            }, 1000);
-
-                            sent = true;
-                        }
+                    if (error) {
+                        console.error('Erreur sauvegarde notification:', error);
+                        this.showNotification('Erreur lors de l\'envoi de la notification', 'error');
+                        return;
                     }
 
-                    if (target === 'all' || target === 'anonymous') {
-                        // Pour les utilisateurs anonymes, utiliser une approche différente si nécessaire
-                        // Pour l'instant, on utilise la même méthode
-                        sent = true;
-                    }
+                    // Broadcast via Supabase Realtime to all connected clients
+                    await this.supabase
+                        .channel('admin_notifications')
+                        .send({
+                            type: 'broadcast',
+                            event: 'new_notification',
+                            payload: notification
+                        });
 
-                    // Envoyer aussi la notification à l'admin
-                    this.showNotification(message, type);
+                    // Reset form and update UI
+                    document.getElementById('adminNotificationMessage').value = '';
+                    document.getElementById('adminNotificationType').value = 'info';
+                    document.getElementById('adminNotificationTarget').value = 'all';
 
-                    if (sent) {
-                        this.showNotification('📤 Notification envoyée avec succès !', 'success');
+                    // Show success message
+                    this.showNotification('📤 Notification envoyée avec succès !', 'success');
 
-                        // Mettre à jour le compteur de notifications
-                        const currentCount = parseInt(document.getElementById('totalNotifications').textContent) || 0;
-                        document.getElementById('totalNotifications').textContent = currentCount + 1;
+                    // Update notification counter
+                    const currentCount = parseInt(document.getElementById('totalNotifications').textContent) || 0;
+                    document.getElementById('totalNotifications').textContent = currentCount + 1;
 
-                        // Fermer la modal
-                        this.closeAdminModal();
+                    // Close modal
+                    this.closeAdminModal();
 
-                        console.log('📢 Admin notification sent:', { message, type, target });
-                    } else {
-                        this.showNotification('Erreur lors de l\'envoi', 'error');
-                    }
+                    console.log('📢 Admin notification sent via WebPush:', notification);
 
                 } catch (error) {
                     console.error('Erreur envoi notification admin:', error);
@@ -2662,27 +2743,89 @@
                 }
             }
 
-            // Écouter les notifications admin depuis d'autres onglets
-            setupAdminNotificationListener() {
-                window.addEventListener('storage', (e) => {
-                    if (e.key === 'admin-notification' && e.newValue) {
-                        try {
-                            const data = JSON.parse(e.newValue);
+            // Écouter les notifications admin via Supabase Realtime
+            setupRealtimeNotificationListener() {
+                const channel = this.supabase
+                    .channel('admin_notifications')
+                    .on('broadcast', { event: 'new_notification' }, (payload) => {
+                        const notification = payload.payload;
 
-                            // Vérifier la cible
-                            if (data.target === 'all' ||
-                                (data.target === 'authenticated' && this.isAuthenticated) ||
-                                (data.target === 'anonymous' && !this.isAuthenticated)) {
+                        // Vérifier la cible
+                        if (notification.target === 'all' ||
+                            (notification.target === 'authenticated' && this.isAuthenticated) ||
+                            (notification.target === 'anonymous' && !this.isAuthenticated)) {
 
-                                // Afficher la notification
-                                this.showNotification(data.message, data.type);
-                                console.log('📩 Received admin notification:', data);
-                            }
-                        } catch (error) {
-                            console.error('Erreur parsing notification admin:', error);
+                            // Afficher la notification dans l'interface
+                            this.showNotification(notification.message, notification.type);
+
+                            // Envoyer une vraie push notification si supportée et autorisée
+                            this.sendPushNotification(notification);
+
+                            console.log('📩 Received admin notification via Realtime:', notification);
                         }
+                    })
+                    .subscribe();
+
+                console.log('🔔 Notification listener configured via Supabase Realtime');
+            }
+
+            async sendPushNotification(notification) {
+                if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') {
+                    return;
+                }
+
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+
+                    await registration.showNotification(notification.message, {
+                        body: `Notification ${notification.type} de PickMe`,
+                        icon: '/pickme_logo.png',
+                        badge: '/pickme_logo.png',
+                        tag: 'admin-notification',
+                        requireInteraction: true,
+                        data: {
+                            url: '/',
+                            notificationId: notification.id
+                        }
+                    });
+
+                    // Enregistrer la livraison si l'utilisateur est connecté
+                    if (this.currentUser) {
+                        await this.supabase
+                            .from('notification_deliveries')
+                            .insert({
+                                notification_id: notification.id,
+                                user_id: this.currentUser.id
+                            });
                     }
-                });
+                } catch (error) {
+                    console.error('Erreur envoi push notification:', error);
+                }
+            }
+
+            async loadNotificationHistory() {
+                if (!this.isAdmin) return;
+
+                try {
+                    const { data: notifications, error } = await this.supabase
+                        .from('admin_notifications')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+
+                    if (error) {
+                        console.error('Erreur chargement historique:', error);
+                        return;
+                    }
+
+                    // Update notification counter
+                    const totalCount = notifications.length;
+                    document.getElementById('totalNotifications').textContent = totalCount;
+
+                    console.log('📋 Notification history loaded:', notifications);
+                } catch (error) {
+                    console.error('Erreur chargement historique:', error);
+                }
             }
         }
 
