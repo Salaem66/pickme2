@@ -10,6 +10,21 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Découvre le film parfait qui correspond à ton humeur du moment">
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PickMe">
+
+    <!-- PWA Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/pickme_logo.png">
+    <link rel="apple-touch-icon" href="/pickme_logo.png">
+    <link rel="shortcut icon" href="/pickme_logo.png">
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -304,7 +319,7 @@
     </div>
     
     <script>
-        class TechVibeFilms {
+        class TechPickMe {
             constructor() {
                 this.movies = [];
                 this.currentIndex = 0;
@@ -1758,9 +1773,22 @@
                 }, 3000);
             }
         }
-        
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered with scope: ', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker registration failed: ', error);
+                    });
+            });
+        }
+
         // Initialize app
-        const app = new TechVibeFilms();
+        const app = new TechPickMe();
     </script>
 </body>
 </html>
