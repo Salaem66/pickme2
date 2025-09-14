@@ -9,11 +9,43 @@ from typing import Dict, List, Tuple, Optional
 
 class EmotionMapper:
     def __init__(self):
-        # Mapping émotions -> genres avec coefficients de boost
+        # Mapping émotions/états -> genres avec coefficients de boost
         self.emotion_mappings = {
+            # DÉTENTE / RELAXATION / CHILL
+            "detente": {
+                "keywords": ["détendre", "chill", "relaxer", "zen", "paisible", "calme", "tranquille", "reposer"],
+                "phrases": [],
+                "target_genres": {"Drame": 6.0, "Romance": 5.0, "Comédie": 4.0, "Familial": 4.0},
+                "boost_keywords": ["paisible", "relaxant", "doux", "contemplatif", "slow", "nature"]
+            },
+
+            # RÉCONFORT / BESOIN DE CHALEUR
+            "reconfort": {
+                "keywords": ["réconfort", "chaleur", "bienveillant", "réconfortant", "doudou", "cocooning"],
+                "phrases": [],
+                "target_genres": {"Familial": 8.0, "Romance": 6.0, "Animation": 5.0, "Comédie": 4.0},
+                "boost_keywords": ["touchant", "bienveillant", "chaleureux", "émotionnel", "feel-good"]
+            },
+
+            # STRESS / BESOIN D'ÉVACUER
+            "stress": {
+                "keywords": ["stressé", "énervé", "tendu", "évacuer", "défouler", "exploser"],
+                "phrases": [],
+                "target_genres": {"Action": 8.0, "Comédie": 6.0, "Thriller": 4.0},
+                "boost_keywords": ["explosif", "défouloir", "cathartique", "intense", "libérateur"]
+            },
+
+            # NOSTALGIE / SOUVENIRS
+            "nostalgie": {
+                "keywords": ["nostalgie", "nostalgique", "souvenirs", "passé", "mélancolie", "enfance"],
+                "phrases": [],
+                "target_genres": {"Drame": 8.0, "Romance": 6.0, "Familial": 5.0},
+                "boost_keywords": ["nostalgique", "émouvant", "touchant", "mélancolique", "souvenir"]
+            },
+
             # RIRE / HUMOUR / COMÉDIE
             "rire": {
-                "keywords": ["rire"],  # SIMPLE : DÈS QU'IL Y A "RIRE" → BOOST COMÉDIE
+                "keywords": ["rire", "marrer", "rigoler", "drôle", "délirer"],
                 "phrases": [],
                 "target_genres": {"Comédie": 8.0, "Familial": 4.0, "Animation": 3.0},
                 "boost_keywords": ["drôle", "amusant", "hilarant", "comique", "rigolo", "marrant", "gag", "humour"]
@@ -37,10 +69,34 @@ class EmotionMapper:
             
             # ROMANCE / AMOUR / TENDRESSE
             "amour": {
-                "keywords": ["amour"],  # SIMPLE : DÈS QU'IL Y A "AMOUR" → BOOST ROMANCE
+                "keywords": ["amour", "romantique", "couple", "tendresse", "passion", "cœur"],
                 "phrases": [],
                 "target_genres": {"Romance": 8.0, "Drame": 4.0, "Comédie": 3.0},
                 "boost_keywords": ["romantique", "passionné", "tendre", "sensuel", "couple", "mariage", "baiser"]
+            },
+
+            # SOLITUDE / TRISTESSE
+            "solitude": {
+                "keywords": ["seul", "isolé", "solitaire", "abandon", "vide", "mélancolie"],
+                "phrases": [],
+                "target_genres": {"Drame": 8.0, "Romance": 4.0, "Thriller": 3.0},
+                "boost_keywords": ["introspectif", "contemplatif", "mélancolique", "profond", "existentiel"]
+            },
+
+            # MOTIVATION / INSPIRATION
+            "motivation": {
+                "keywords": ["motiver", "inspirer", "courage", "détermination", "réussir", "vaincre", "surmonter"],
+                "phrases": [],
+                "target_genres": {"Drame": 7.0, "Action": 6.0, "Aventure": 5.0, "Familial": 4.0},
+                "boost_keywords": ["inspirant", "motivant", "triomphe", "résilience", "espoir", "courage"]
+            },
+
+            # ÉVASION / VOYAGER / AVENTURE
+            "evasion": {
+                "keywords": ["évader", "voyager", "partir", "ailleurs", "découvrir", "explorer", "liberté"],
+                "phrases": [],
+                "target_genres": {"Aventure": 8.0, "Fantastique": 6.0, "Science-Fiction": 5.0, "Animation": 4.0},
+                "boost_keywords": ["évasion", "voyage", "découverte", "exploration", "liberté", "horizon"]
             },
             
             # ACTION / ADRÉNALINE / EXCITATION
