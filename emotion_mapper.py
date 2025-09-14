@@ -53,10 +53,10 @@ class EmotionMapper:
             
             # PEUR / HORREUR / ANGOISSE
             "peur": {
-                "keywords": ["peur"],  # SIMPLE : DÈS QU'IL Y A "PEUR" → BOOST HORREUR
-                "phrases": [],  # TOUTES LES PHRASES CONTENANT "PEUR" SONT DÉTECTÉES
+                "keywords": ["peur", "avoir peur", "j'ai peur", "envie d'avoir peur", "horreur", "épouvante", "terreur", "angoisse", "terrifiant", "effrayant"],
+                "phrases": [],
                 "target_genres": {"Horreur": 10.0},  # BOOST ULTRA-AGRESSIF - HORREUR UNIQUEMENT
-                "boost_keywords": ["horreur", "épouvante", "effrayant", "terrifiant", "gore", "cauchemar", "zombie", "fantôme"]
+                "boost_keywords": ["horreur", "épouvante", "effrayant", "terrifiant", "gore", "cauchemar", "zombie", "fantôme", "démon", "paranormal"]
             },
             
             # TRISTESSE / ÉMOTION / DRAME

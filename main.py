@@ -211,6 +211,27 @@ async def search_movies(
             'filter_genres': genre_list,
             'filter_platforms': platform_list
         }).execute()
+
+        # AJOUT SPÉCIAL : Si recherche "peur" avec boost Horreur >= 7.0, forcer l'ajout des films d'horreur populaires
+        if genre_boosts and 'Horreur' in genre_boosts and genre_boosts['Horreur'] >= 7.0:
+            logger.info(f"🔥 RECHERCHE PEUR DÉTECTÉE - Ajout forcé des films d'horreur populaires")
+
+            # Requête pour récupérer les films d'horreur populaires (vote_average >= 6.5)
+            horror_query = supabase.from_('movies').select('*').contains('genres', ['Horreur']).gte('vote_average', 6.5).order('vote_average', desc=True).limit(10).execute()
+
+            if horror_query.data:
+                existing_ids = {movie['id'] for movie in result.data or []}
+
+                for horror_movie in horror_query.data:
+                    if horror_movie['id'] not in existing_ids:
+                        # Ajouter avec similarité très faible pour que le boost s'applique
+                        horror_movie['similarity'] = 0.05  # Très faible similarité de base
+                        if not result.data:
+                            result.data = []
+                        result.data.append(horror_movie)
+                        logger.info(f"➕ Ajout forcé: {horror_movie.get('title')} ({horror_movie.get('vote_average')})")
+
+                logger.info(f"🎬 {len(result.data)} films au total après ajout des horreurs populaires")
         
         if not result.data:
             return JSONResponse({
@@ -222,24 +243,36 @@ async def search_movies(
         
         movies = result.data
         
-        # Application des boost émotionnels
+        # Application des boost émotionnels - BOOST AGRESSIF POUR HORREUR
         if genre_boosts and movies:
             for movie in movies:
                 movie_genres = movie.get('genre_names', [])
                 emotion_boost = 1.0
-                
+
                 # Calculer le boost maximal pour ce film
                 for genre in movie_genres:
                     if genre in genre_boosts:
                         emotion_boost = max(emotion_boost, genre_boosts[genre])
-                
+
                 # Appliquer le boost au score de similarité
                 if emotion_boost > 1.0:
                     original_similarity = movie.get('similarity', 0)
-                    boosted_similarity = min(1.0, original_similarity * emotion_boost)
+
+                    # BOOST SPÉCIAL HORREUR : Si c'est un film d'horreur populaire et recherche "peur"
+                    if 'Horreur' in movie_genres and emotion_boost >= 7.0:
+                        # Films d'horreur populaires : boost additif massif
+                        if movie.get('vote_average', 0) >= 6.5:
+                            boosted_similarity = min(1.0, original_similarity + 0.8)  # Boost additif énorme
+                            logger.info(f"🔥 BOOST HORREUR POPULAIRE: {movie.get('title')} ({movie.get('vote_average')}) -> {boosted_similarity}")
+                        else:
+                            boosted_similarity = min(1.0, original_similarity + 0.4)  # Boost additif modéré
+                    else:
+                        # Boost multiplicatif classique pour les autres genres
+                        boosted_similarity = min(1.0, original_similarity * emotion_boost)
+
                     movie['similarity'] = boosted_similarity
                     movie['emotion_boost'] = emotion_boost
-            
+
             # Retrier par similarité après boost
             movies.sort(key=lambda x: x.get('similarity', 0), reverse=True)
             logger.info(f"🎭 Boost émotionnel appliqué aux genres")
@@ -304,6 +337,27 @@ async def search_movies_post(request: Request):
             'filter_genres': genres if genres else None,
             'filter_platforms': platforms if platforms else None
         }).execute()
+
+        # AJOUT SPÉCIAL : Si recherche "peur" avec boost Horreur >= 7.0, forcer l'ajout des films d'horreur populaires
+        if genre_boosts and 'Horreur' in genre_boosts and genre_boosts['Horreur'] >= 7.0:
+            logger.info(f"🔥 RECHERCHE PEUR DÉTECTÉE (POST) - Ajout forcé des films d'horreur populaires")
+
+            # Requête pour récupérer les films d'horreur populaires (vote_average >= 6.5)
+            horror_query = supabase.from_('movies').select('*').contains('genres', ['Horreur']).gte('vote_average', 6.5).order('vote_average', desc=True).limit(10).execute()
+
+            if horror_query.data:
+                existing_ids = {movie['id'] for movie in result.data or []}
+
+                for horror_movie in horror_query.data:
+                    if horror_movie['id'] not in existing_ids:
+                        # Ajouter avec similarité très faible pour que le boost s'applique
+                        horror_movie['similarity'] = 0.05  # Très faible similarité de base
+                        if not result.data:
+                            result.data = []
+                        result.data.append(horror_movie)
+                        logger.info(f"➕ Ajout forcé (POST): {horror_movie.get('title')} ({horror_movie.get('vote_average')})")
+
+                logger.info(f"🎬 {len(result.data)} films au total après ajout des horreurs populaires (POST)")
         
         if not result.data:
             return JSONResponse({
@@ -314,24 +368,36 @@ async def search_movies_post(request: Request):
         
         movies = result.data
         
-        # Application des boost émotionnels
+        # Application des boost émotionnels - BOOST AGRESSIF POUR HORREUR
         if genre_boosts and movies:
             for movie in movies:
                 movie_genres = movie.get('genre_names', [])
                 emotion_boost = 1.0
-                
+
                 # Calculer le boost maximal pour ce film
                 for genre in movie_genres:
                     if genre in genre_boosts:
                         emotion_boost = max(emotion_boost, genre_boosts[genre])
-                
+
                 # Appliquer le boost au score de similarité
                 if emotion_boost > 1.0:
                     original_similarity = movie.get('similarity', 0)
-                    boosted_similarity = min(1.0, original_similarity * emotion_boost)
+
+                    # BOOST SPÉCIAL HORREUR : Si c'est un film d'horreur populaire et recherche "peur"
+                    if 'Horreur' in movie_genres and emotion_boost >= 7.0:
+                        # Films d'horreur populaires : boost additif massif
+                        if movie.get('vote_average', 0) >= 6.5:
+                            boosted_similarity = min(1.0, original_similarity + 0.8)  # Boost additif énorme
+                            logger.info(f"🔥 BOOST HORREUR POPULAIRE: {movie.get('title')} ({movie.get('vote_average')}) -> {boosted_similarity}")
+                        else:
+                            boosted_similarity = min(1.0, original_similarity + 0.4)  # Boost additif modéré
+                    else:
+                        # Boost multiplicatif classique pour les autres genres
+                        boosted_similarity = min(1.0, original_similarity * emotion_boost)
+
                     movie['similarity'] = boosted_similarity
                     movie['emotion_boost'] = emotion_boost
-            
+
             # Retrier par similarité après boost
             movies.sort(key=lambda x: x.get('similarity', 0), reverse=True)
             logger.info(f"🎭 Boost émotionnel appliqué aux genres (POST)")
