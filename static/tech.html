@@ -246,23 +246,23 @@
                             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
                                     <input type="checkbox" id="netflix" class="platform-checkbox w-5 h-5 rounded border-2 border-red-500/50 bg-transparent text-red-500 focus:ring-2 focus:ring-red-500/20">
-                                    <span class="text-sm font-medium group-hover:text-red-400 transition-colors">Netflix</span>
+                                    <span class="text-sm font-medium text-white">Netflix</span>
                                 </label>
                                 <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
                                     <input type="checkbox" id="amazonprime" class="platform-checkbox w-5 h-5 rounded border-2 border-blue-500/50 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                                    <span class="text-sm font-medium group-hover:text-blue-400 transition-colors">Prime</span>
+                                    <span class="text-sm font-medium text-white">Prime</span>
                                 </label>
                                 <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
                                     <input type="checkbox" id="appletv" class="platform-checkbox w-5 h-5 rounded border-2 border-white/30 bg-transparent text-white focus:ring-2 focus:ring-white/20">
-                                    <span class="text-sm font-medium group-hover:text-gray-300 transition-colors">Apple TV</span>
+                                    <span class="text-sm font-medium text-white">Apple TV</span>
                                 </label>
                                 <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
                                     <input type="checkbox" id="disneyplus" class="platform-checkbox w-5 h-5 rounded border-2 border-blue-400/50 bg-transparent text-blue-400 focus:ring-2 focus:ring-blue-400/20">
-                                    <span class="text-sm font-medium group-hover:text-blue-300 transition-colors">Disney+</span>
+                                    <span class="text-sm font-medium text-white">Disney+</span>
                                 </label>
                                 <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-white/20">
                                     <input type="checkbox" id="cineplus" class="platform-checkbox w-5 h-5 rounded border-2 border-purple-500/50 bg-transparent text-purple-500 focus:ring-2 focus:ring-purple-500/20">
-                                    <span class="text-sm font-medium group-hover:text-purple-400 transition-colors">Cine+ OCS</span>
+                                    <span class="text-sm font-medium text-white">Cine+ OCS</span>
                                 </label>
                             </div>
                         </div>
@@ -683,7 +683,7 @@
                 
                 const container = document.getElementById('moodTags');
                 container.innerHTML = defaultSuggestions.map(mood =>
-                    `<button class="mood-tag px-3 md:px-4 py-2 glass rounded-xl text-xs md:text-sm font-medium hover-lift transition-all border border-white/20 active:scale-95 touch-manipulation" data-mood="${mood}">${mood}</button>`
+                    `<button class="mood-tag px-3 md:px-4 py-2 glass rounded-xl text-xs md:text-sm font-medium hover-lift transition-all border border-white/20 active:scale-95 touch-manipulation text-white" data-mood="${mood}">${mood}</button>`
                 ).join('');
             }
             
