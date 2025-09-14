@@ -2128,15 +2128,36 @@
                     const name = this.currentUser.user_metadata?.name || this.currentUser.email;
                     const email = this.currentUser.email;
                     const avatar = this.currentUser.user_metadata?.avatar_url;
+
+                    // Debug pour identifier le problème d'affichage
+                    console.log('👤 User metadata:', {
+                        name,
+                        email,
+                        avatar,
+                        full_metadata: this.currentUser.user_metadata
+                    });
                     
                     document.getElementById('userEmail').textContent = name;
                     
                     // Utiliser l'avatar Google ou les initiales
                     const userInitialElement = document.getElementById('userInitial');
                     if (avatar) {
-                        userInitialElement.innerHTML = `<img src="${avatar}" alt="Avatar" class="w-8 h-8 rounded-full">`;
+                        userInitialElement.innerHTML = `<img src="${avatar}" alt="Avatar" class="w-8 h-8 rounded-full object-cover">`;
                     } else {
-                        userInitialElement.textContent = name[0].toUpperCase();
+                        // Générer des initiales plus intelligentes
+                        let initials = '';
+                        if (name && name.includes(' ')) {
+                            // Si nom complet, prendre première lettre de chaque mot
+                            const words = name.split(' ');
+                            initials = words[0][0] + (words[1] ? words[1][0] : '');
+                        } else if (name && name.length > 0) {
+                            // Si un seul mot, prendre première lettre
+                            initials = name[0];
+                        } else {
+                            // Fallback sur email
+                            initials = email[0];
+                        }
+                        userInitialElement.textContent = initials.toUpperCase();
                     }
                 } else {
                     loginBtn.style.display = 'flex';
