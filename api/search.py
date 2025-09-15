@@ -130,7 +130,7 @@ class SupabaseVectorEngine:
                 genre_filter = genres
             elif is_comedy_request:
                 # Auto-filtrer sur les comédies si détecté
-                genre_filter = ['Comedy', 'Comédie']
+                genre_filter = ['Comédie']
 
             # Appeler la fonction de recherche Supabase (prendre plus de résultats pour le filtrage)
             result = self.supabase.rpc('match_movies_v2', {
