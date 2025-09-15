@@ -2199,7 +2199,13 @@
                     if (error) {
                         console.error('Erreur déconnexion:', error);
                         this.showNotification('Erreur de déconnexion', 'error');
+                        return;
                     }
+
+                    // Réinitialiser l'état de l'application
+                    this.handleAuthLogout();
+                    this.showNotification('Déconnexion réussie', 'success');
+
                 } catch (error) {
                     console.error('Erreur déconnexion:', error);
                     this.showNotification('Erreur de déconnexion', 'error');

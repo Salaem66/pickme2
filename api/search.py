@@ -32,29 +32,24 @@ class SupabaseVectorEngine:
     
     def generate_query_embedding_api(self, query: str) -> List[float]:
         """
-        Génère l'embedding via une API externe (Hugging Face Inference)
-        Plus léger que charger un modèle local
+        Génère l'embedding via sentence-transformers local (plus fiable)
         """
         try:
-            # Utiliser l'API Hugging Face Inference (gratuite)
-            api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
-            
-            response = requests.post(
-                api_url,
-                headers={"Authorization": "Bearer hf_your_token_here"},  # Optionnel
-                json={"inputs": query}
-            )
-            
-            if response.status_code == 200:
-                embedding = response.json()
-                if isinstance(embedding, list) and len(embedding) > 0:
-                    return embedding[0] if isinstance(embedding[0], list) else embedding
-            
-            # Fallback : utiliser un embedding par défaut basé sur des mots-clés
+            # Essayer d'importer et utiliser sentence-transformers
+            from sentence_transformers import SentenceTransformer
+
+            # Charger le même modèle que pour les films
+            model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+            embedding = model.encode(query).tolist()
+
+            print(f"✅ Embedding généré via sentence-transformers: {len(embedding)} dimensions")
+            return embedding
+
+        except ImportError:
+            print("⚠️ sentence-transformers non disponible, utilisation du fallback")
             return self.generate_keyword_embedding(query)
-            
         except Exception as e:
-            print(f"Error generating embedding via API: {e}")
+            print(f"Error generating embedding via sentence-transformers: {e}")
             return self.generate_keyword_embedding(query)
     
     def generate_keyword_embedding(self, query: str) -> List[float]:
@@ -125,13 +120,20 @@ class SupabaseVectorEngine:
             # Générer l'embedding de la requête
             query_embedding = self.generate_query_embedding_api(query)
 
+            # Détecter si la requête demande des comédies
+            comedy_keywords = ['rire', 'drôle', 'marrant', 'comique', 'amusant', 'rigolo', 'hilarant', 'comédie']
+            is_comedy_request = any(keyword in query.lower() for keyword in comedy_keywords)
+
             # Construire les filtres de genre si fournis
             genre_filter = None
             if genres:
                 genre_filter = genres
+            elif is_comedy_request:
+                # Auto-filtrer sur les comédies si détecté
+                genre_filter = ['Comedy', 'Comédie']
 
             # Appeler la fonction de recherche Supabase (prendre plus de résultats pour le filtrage)
-            result = self.supabase.rpc('match_movies', {
+            result = self.supabase.rpc('match_movies_v2', {
                 'query_embedding': query_embedding,
                 'match_threshold': similarity_threshold,
                 'match_count': limit * 3,  # Récupérer plus pour compenser le filtrage
